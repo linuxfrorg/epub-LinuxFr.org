@@ -1,11 +1,14 @@
 package main
 
 import (
+	"archive/zip"
 	"flag"
 	"fmt"
 	"github.com/bmizerany/pat"
 	"github.com/moovweb/gokogiri"
+	"github.com/moovweb/gokogiri/html"
 	"github.com/moovweb/gokogiri/xml"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -13,16 +16,69 @@ import (
 	"syscall"
 )
 
-const Host = "linuxfr.org"
+type Item struct {
+	Id string
+	Href string
+	Type string
+}
 
-// Create an epub for a news
-func News(w http.ResponseWriter, r *http.Request) {
-	slug := r.URL.Query().Get(":slug")
-	uri := fmt.Sprintf("http://%s/news/%s", Host, slug)
-	fmt.Println(uri)
+type Epub struct {
+	Zip *zip.Writer
+	// TODO identifier / language / publisher / rights
+	Title        string
+	Subject      string
+	Date         string
+	Creator      string
+	Contributors []string
+	Items        []Item
+}
+
+const (
+	Host        = "linuxfr.org"
+	ContentType = "application/epub+zip"
+	Container   = `<?xml version="1.0" encoding="utf-8"?>
+<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0">
+  <rootfiles>
+    <rootfile full-path="EPUB/package.opf" media-type="application/oebps-package+xml"/>
+  </rootfiles>
+</container>`
+)
+
+func NewEpub(w io.Writer) (epub *Epub) {
+	z := zip.NewWriter(w)
+	epub = &Epub{Zip: z}
+	epub.AddFile("mimetype", ContentType)
+	epub.AddFile("META-INF/container.xml", Container)
+	return
+}
+
+func (epub *Epub) AddFile(filename, content string) (err error) {
+	f, err := epub.Zip.Create(filename)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	_, err = f.Write([]byte(content))
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	return
+}
+
+func (epub *Epub) Close() {
+	epub.AddFile("EPUB/package.opf", "XXX") // FIXME
+	err := epub.Zip.Close()
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func fetchContent(uri string) (doc *html.HtmlDocument, err error) {
 	resp, err := http.Get(uri)
 	if err != nil {
-		http.NotFound(w, r)
 		return
 	}
 	defer resp.Body.Close()
@@ -30,20 +86,35 @@ func News(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("Error on ioutil.ReadAll for %s: %s\n", uri, err)
-		http.NotFound(w, r)
 		return
 	}
 
-	doc, err := gokogiri.ParseHtml(body)
+	doc, err = gokogiri.ParseHtml(body)
 	if err != nil {
 		log.Printf("Gokogiri error: %s\n", err)
-		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	return
+}
+
+// Create an epub for a news
+func News(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", ContentType)
+
+	slug := r.URL.Query().Get(":slug")
+	uri := fmt.Sprintf("http://%s/news/%s", Host, slug)
+	doc, err := fetchContent(uri)
+	if err != nil {
+		http.NotFound(w, r)
 		return
 	}
 
 	buffer := make([]byte, 4096)
 	buffer, _ = doc.Root().ToHtml([]byte(xml.DefaultEncoding), buffer)
-	w.Write(buffer)
+
+	epub := NewEpub(w)
+	epub.Close()
 }
 
 // Returns 200 OK if the server is running (for monitoring)
