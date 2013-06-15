@@ -10,6 +10,7 @@ How to use it?
 
 [Install Go 1](http://golang.org/doc/install) and don't forget to set `$GOPATH`
 
+    # aptitude install libonig-dev libxml2-dev
     $ go get -u github.com/nono/epub-LinuxFr.org
     $ epub-LinuxFr.org [-addr addr] [-l logs]
 
