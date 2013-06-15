@@ -48,32 +48,66 @@ const (
 </container>`
 )
 
+// FIXME why html/template escapes the first '<' sign?!??
+// TODO embed CSS & images
+// TODO cover
 var PackageTemplate = template.Must(template.New("package").Parse(
 	`<?xml version="1.0" encoding="utf-8"?>
-<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="bookid" xml:lang="fr">
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="bookid" xml:lang="fr" version="3.0">
 	<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
 		<dc:language id="pub-language">fr</dc:language>
 		<dc:identifier id="pub-identifier">xxx</dc:identifier>
 		{{if .Title}}<dc:title id="pub-title">{{.Title}}</dc:title>{{end}}
 		{{if .Date}}<dc:date>{{.Date}}</dc:date>{{end}}
 		{{if .Creator}}<dc:creator id="pub-creator">{{.Creator}}</dc:creator>{{end}}
-		{{range .Contributors}}<dc:contributor>{{.}}</dc:contributor>{{end}}
+		{{range .Contributors}}<dc:contributor>{{.}}</dc:contributor>
+		{{end}}
 		<dc:rights>xxx</dc:rights>
 	</metadata>
 	<manifest>
-		{{range .Items}}<item id="{{.Id}}" href="{{.Href}}" media-type="{{.Type}}"/>{{end}}
+		{{range .Items}}<item id="{{.Id}}" href="{{.Href}}" media-type="{{.Type}}"/>
+		{{end}}
 	</manifest>
 	<spine>
-		{{range .Items}}<itemref idref="{{.Id}}"/>{{end}}
+		{{range .Items}}<itemref idref="{{.Id}}"/>
+		{{end}}
 	</spine>
 </package>`))
 
 func NewEpub(w io.Writer) (epub *Epub) {
 	z := zip.NewWriter(w)
-	epub = &Epub{Zip: z}
+	epub = &Epub{Zip: z, Items: []Item{}}
 	epub.AddFile("mimetype", ContentType)
 	epub.AddFile("META-INF/container.xml", Container)
 	return
+}
+
+func (epub *Epub) AddContent(article xml.Node) {
+	xpath := css.Convert(".content", css.LOCAL)
+	nodes, err := article.Search(xpath)
+	if err != nil || len(nodes) == 0 {
+		return
+	}
+	html := nodes[0].InnerHtml() // FIXME should be a complete HTML document
+	filename := "EPUB/content.html"
+	epub.Items = append(epub.Items, Item{"item-content", filename, "application/xhtml+xml"})
+	epub.AddFile(filename, html)
+}
+
+func (epub *Epub) AddComments(article xml.Node) {
+	list := article.NextSibling()
+	xpath := css.Convert(".threads>li", css.LOCAL)
+	threads, err := list.Search(xpath)
+	if err != nil {
+		return
+	}
+	for _, thread := range threads {
+		html := thread.InnerHtml() // FIXME should be a complete HTML document
+		id := thread.Attr("id")
+		filename := fmt.Sprintf("EPUB/%s.html", id)
+		epub.Items = append(epub.Items, Item{id, filename, "application/xhtml+xml"})
+		epub.AddFile(filename, html)
+	}
 }
 
 func (epub *Epub) FindMeta(article xml.Node, selector string) string {
@@ -194,6 +228,8 @@ func News(w http.ResponseWriter, r *http.Request) {
 
 	epub := NewEpub(w)
 	epub.FillMeta(article)
+	epub.AddContent(article)
+	epub.AddComments(article)
 	epub.Close()
 }
 
@@ -224,6 +260,7 @@ func main() {
 	m := pat.New()
 	m.Get("/status", http.HandlerFunc(Status))
 	m.Get("/news/:slug.epub", http.HandlerFunc(News))
+	// TODO accept other content types
 	http.Handle("/", m)
 
 	// Start the HTTP server
