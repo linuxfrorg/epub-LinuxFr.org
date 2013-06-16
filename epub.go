@@ -77,7 +77,7 @@ var PackageTemplate = template.Must(template.New("package").Parse(
 func NewEpub(w io.Writer) (epub *Epub) {
 	z := zip.NewWriter(w)
 	epub = &Epub{Zip: z, Items: []Item{}}
-	epub.AddFile("mimetype", ContentType)
+	epub.AddMimetype()
 	epub.AddFile("META-INF/container.xml", Container)
 	return
 }
@@ -143,6 +143,23 @@ func (epub *Epub) FillMeta(article xml.Node) {
 	}
 	epub.Creator = epub.FindMeta(article, "header .meta a[rel=\"author\"]")
 	epub.Contributors = epub.FindMetas(article, "header .meta .edited_by a")
+}
+
+func (epub *Epub) AddMimetype() (err error) {
+	header := &zip.FileHeader{Name: "mimetype", Method: zip.Store}
+	f, err := epub.Zip.CreateHeader(header)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	_, err = f.Write([]byte(ContentType))
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	return
 }
 
 func (epub *Epub) AddFile(filename, content string) (err error) {
