@@ -39,9 +39,10 @@ type Epub struct {
 }
 
 const (
-	Host        = "linuxfr.org"
-	ContentType = "application/epub+zip"
-	Container   = `<?xml version="1.0" encoding="utf-8"?>
+	Host           = "linuxfr.org"
+	ContentType    = "application/epub+zip"
+	XmlDeclaration = `<?xml version="1.0" encoding="utf-8"?>`
+	Container      = XmlDeclaration + `
 <container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0">
   <rootfiles>
     <rootfile full-path="EPUB/package.opf" media-type="application/oebps-package+xml"/>
@@ -49,11 +50,9 @@ const (
 </container>`
 )
 
-// FIXME why html/template escapes the first '<' sign?!??
 // TODO embed CSS & images
 // TODO cover
-var PackageTemplate = template.Must(template.New("package").Parse(
-	`<?xml version="1.0" encoding="utf-8"?>
+var PackageTemplate = template.Must(template.New("package").Parse(`
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="bookid" xml:lang="fr" version="3.0">
 	<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
 		<dc:language id="pub-language">fr</dc:language>
@@ -187,7 +186,7 @@ func (epub *Epub) Close() {
 		return
 	}
 
-	epub.AddFile("EPUB/package.opf", opf.String())
+	epub.AddFile("EPUB/package.opf", XmlDeclaration+opf.String())
 	err = epub.Zip.Close()
 	if err != nil {
 		log.Println(err)
