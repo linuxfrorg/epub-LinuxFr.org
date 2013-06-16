@@ -42,12 +42,14 @@ const (
 	Host           = "linuxfr.org"
 	ContentType    = "application/epub+zip"
 	XmlDeclaration = `<?xml version="1.0" encoding="utf-8"?>`
-	Container      = XmlDeclaration + `
+
+	Container = XmlDeclaration + `
 <container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0">
   <rootfiles>
     <rootfile full-path="EPUB/package.opf" media-type="application/oebps-package+xml"/>
   </rootfiles>
 </container>`
+
 	Nav = XmlDeclaration + `
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="fr" xml:lang="fr">
   <head>
@@ -59,15 +61,24 @@ const (
       <h1>Sommaire</h1>
       <nav xmlns:epub="http://www.idpf.org/2007/ops" epub:type="toc" id="toc">
         <ol>
-          <li><a href="Content.html">Aller au contenu</a></li>
+          <li><a href="content.html">Aller au contenu</a></li>
         </ol>
       </nav>
     </section>
   </body>
 </html>`
+
+	HeaderHtml = XmlDeclaration + `
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
+  <head>
+    <title>LinuxFr.org</title>
+    <meta charset="utf-8" />
+  </head>
+  <body>`
+
+	FooterHtml = "</body></html>"
 )
 
-// TODO embed CSS & images
 // TODO cover
 var PackageTemplate = template.Must(template.New("package").Parse(`
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="pub-identifier" xml:lang="fr" version="3.0">
@@ -93,6 +104,12 @@ var PackageTemplate = template.Must(template.New("package").Parse(`
 	</spine>
 </package>`))
 
+func toHtml(node xml.Node) string {
+	// TODO fix links to LinuxFr.org
+	// TODO embed CSS & images
+	return HeaderHtml + node.InnerHtml() + FooterHtml
+}
+
 func NewEpub(w io.Writer) (epub *Epub) {
 	z := zip.NewWriter(w)
 	epub = &Epub{Zip: z, Items: []Item{}}
@@ -108,7 +125,7 @@ func (epub *Epub) AddContent(article xml.Node) {
 	if err != nil || len(nodes) == 0 {
 		return
 	}
-	html := nodes[0].InnerHtml() // FIXME should be a complete HTML document
+	html := toHtml(nodes[0])
 	filename := "content.html"
 	epub.Items = append(epub.Items, Item{"item-content", filename, "application/xhtml+xml"})
 	epub.AddFile("EPUB/"+filename, html)
@@ -122,7 +139,7 @@ func (epub *Epub) AddComments(article xml.Node) {
 		return
 	}
 	for _, thread := range threads {
-		html := thread.InnerHtml() // FIXME should be a complete HTML document
+		html := toHtml(thread)
 		id := thread.Attr("id")
 		filename := id + ".html"
 		epub.Items = append(epub.Items, Item{id, filename, "application/xhtml+xml"})
