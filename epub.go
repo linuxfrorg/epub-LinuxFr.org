@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -39,7 +40,6 @@ type Epub struct {
 }
 
 const (
-	Host           = "linuxfr.org"
 	ContentType    = "application/epub+zip"
 	XmlDeclaration = `<?xml version="1.0" encoding="utf-8"?>`
 
@@ -103,6 +103,8 @@ var PackageTemplate = template.Must(template.New("package").Parse(`
 		{{end}}
 	</spine>
 </package>`))
+
+var Host string
 
 func toHtml(node xml.Node) string {
 	// TODO fix links to LinuxFr.org
@@ -231,7 +233,7 @@ func (epub *Epub) Close() {
 	}
 }
 
-func fetchArticle(uri string) (article xml.Node, err error) {
+func FetchArticle(uri string) (article xml.Node, err error) {
 	resp, err := http.Get(uri)
 	if err != nil {
 		return
@@ -266,20 +268,15 @@ func fetchArticle(uri string) (article xml.Node, err error) {
 	return
 }
 
-// Create an epub for a news
-func News(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", ContentType)
-
-	slug := r.URL.Query().Get(":slug")
-	uri := fmt.Sprintf("http://%s/news/%s", Host, slug)
-	article, err := fetchArticle(uri)
+func Content(w http.ResponseWriter, r *http.Request) {
+	uri := "http://" + Host + strings.Replace(r.URL.Path, ".epub", "", 1)
+	article, err := FetchArticle(uri)
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 
-	// 	buffer := make([]byte, 4096)
-	// 	buffer, _ = doc.Root().ToHtml(xml.DefaultEncodingBytes, buffer)
+	w.Header().Add("Content-Type", ContentType)
 
 	epub := NewEpub(w)
 	epub.FillMeta(article)
@@ -301,6 +298,7 @@ func main() {
 	var logs string
 	flag.StringVar(&addr, "a", "127.0.0.1:8000", "Bind to this address:port")
 	flag.StringVar(&logs, "l", "-", "Use this file for logs")
+	flag.StringVar(&Host, "h", "linuxfr.org", "Use this host to fetch pages")
 	flag.Parse()
 
 	// Logging
@@ -316,8 +314,12 @@ func main() {
 	// Routing
 	m := pat.New()
 	m.Get("/status", http.HandlerFunc(Status))
-	m.Get("/news/:slug.epub", http.HandlerFunc(News))
-	// TODO accept other content types
+	m.Get("/news/:slug.epub", http.HandlerFunc(Content))
+	m.Get("/users/:user/journaux/:slug.epub", http.HandlerFunc(Content))
+	m.Get("/forums/:forum/posts/:slug.epub", http.HandlerFunc(Content))
+	m.Get("/sondages/:slug.epub", http.HandlerFunc(Content))
+	m.Get("/suivi/:slug.epub", http.HandlerFunc(Content))
+	m.Get("/wiki/:slug.epub", http.HandlerFunc(Content))
 	http.Handle("/", m)
 
 	// Start the HTTP server
