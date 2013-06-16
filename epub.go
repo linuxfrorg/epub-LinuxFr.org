@@ -16,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 	"syscall"
 	"time"
 )
@@ -256,6 +257,8 @@ func Status(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	// Parse the command-line
 	var addr string
 	var logs string
