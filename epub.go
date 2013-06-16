@@ -48,6 +48,23 @@ const (
     <rootfile full-path="EPUB/package.opf" media-type="application/oebps-package+xml"/>
   </rootfiles>
 </container>`
+	Nav = XmlDeclaration + `
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="fr" xml:lang="fr">
+  <head>
+    <title>LinuxFr.org</title>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <section class="frontmatter TableOfContents" epub:type="frontmatter toc">
+      <h1>Sommaire</h1>
+      <nav xmlns:epub="http://www.idpf.org/2007/ops" epub:type="toc" id="toc">
+        <ol>
+          <li><a href="Content.html">Aller au contenu</a></li>
+        </ol>
+      </nav>
+    </section>
+  </body>
+</html>`
 )
 
 // TODO embed CSS & images
@@ -66,6 +83,7 @@ var PackageTemplate = template.Must(template.New("package").Parse(`
 		<dc:rights>xxx</dc:rights>
 	</metadata>
 	<manifest>
+		<item id="nav" href="nav.html" media-type="application/xhtml+xml" properties="nav"/>
 		{{range .Items}}<item id="{{.Id}}" href="{{.Href}}" media-type="{{.Type}}"/>
 		{{end}}
 	</manifest>
@@ -80,6 +98,7 @@ func NewEpub(w io.Writer) (epub *Epub) {
 	epub = &Epub{Zip: z, Items: []Item{}}
 	epub.AddMimetype()
 	epub.AddFile("META-INF/container.xml", Container)
+	epub.AddFile("EPUB/nav.html", Nav)
 	return
 }
 
@@ -92,7 +111,7 @@ func (epub *Epub) AddContent(article xml.Node) {
 	html := nodes[0].InnerHtml() // FIXME should be a complete HTML document
 	filename := "content.html"
 	epub.Items = append(epub.Items, Item{"item-content", filename, "application/xhtml+xml"})
-	epub.AddFile("EPUB/" + filename, html)
+	epub.AddFile("EPUB/"+filename, html)
 }
 
 func (epub *Epub) AddComments(article xml.Node) {
@@ -107,7 +126,7 @@ func (epub *Epub) AddComments(article xml.Node) {
 		id := thread.Attr("id")
 		filename := id + ".html"
 		epub.Items = append(epub.Items, Item{id, filename, "application/xhtml+xml"})
-		epub.AddFile("EPUB/" + filename, html)
+		epub.AddFile("EPUB/"+filename, html)
 	}
 }
 
