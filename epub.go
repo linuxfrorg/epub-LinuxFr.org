@@ -175,8 +175,8 @@ func (epub *Epub) FillMeta(article xml.Node) {
 	epub.Title = epub.FindMeta(article, "header h1 a:last-child")
 	epub.Subject = epub.FindMeta(article, "header h1 a.topic")
 	meta := epub.FindMeta(article, "header time.updated")
-	// FIXME ParseInLocation
-	date, err := time.Parse("le 02/01/06 à 15:04", meta)
+	loc, _ := time.LoadLocation("Europe/Paris")
+	date, err := time.ParseInLocation("le 02/01/06 à 15:04", meta, loc)
 	if err != nil {
 		date = time.Now()
 	}
