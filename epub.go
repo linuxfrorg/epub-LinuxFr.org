@@ -53,12 +53,13 @@ const (
 // TODO embed CSS & images
 // TODO cover
 var PackageTemplate = template.Must(template.New("package").Parse(`
-<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="bookid" xml:lang="fr" version="3.0">
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="pub-identifier" xml:lang="fr" version="3.0">
 	<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
 		<dc:language id="pub-language">fr</dc:language>
 		<dc:identifier id="pub-identifier">xxx</dc:identifier>
+		<dc:date>{{.Date}}</dc:date>
+		<meta property="dcterms:modified">{{.Date}}</meta>
 		{{if .Title}}<dc:title id="pub-title">{{.Title}}</dc:title>{{end}}
-		{{if .Date}}<dc:date>{{.Date}}</dc:date>{{end}}
 		{{if .Creator}}<dc:creator id="pub-creator">{{.Creator}}</dc:creator>{{end}}
 		{{range .Contributors}}<dc:contributor>{{.}}</dc:contributor>
 		{{end}}
@@ -89,9 +90,9 @@ func (epub *Epub) AddContent(article xml.Node) {
 		return
 	}
 	html := nodes[0].InnerHtml() // FIXME should be a complete HTML document
-	filename := "EPUB/content.html"
+	filename := "content.html"
 	epub.Items = append(epub.Items, Item{"item-content", filename, "application/xhtml+xml"})
-	epub.AddFile(filename, html)
+	epub.AddFile("EPUB/" + filename, html)
 }
 
 func (epub *Epub) AddComments(article xml.Node) {
@@ -104,9 +105,9 @@ func (epub *Epub) AddComments(article xml.Node) {
 	for _, thread := range threads {
 		html := thread.InnerHtml() // FIXME should be a complete HTML document
 		id := thread.Attr("id")
-		filename := fmt.Sprintf("EPUB/%s.html", id)
+		filename := id + ".html"
 		epub.Items = append(epub.Items, Item{id, filename, "application/xhtml+xml"})
-		epub.AddFile(filename, html)
+		epub.AddFile("EPUB/" + filename, html)
 	}
 }
 
@@ -138,9 +139,10 @@ func (epub *Epub) FillMeta(article xml.Node) {
 	meta := epub.FindMeta(article, "header time.updated")
 	// FIXME ParseInLocation
 	date, err := time.Parse("le 02/01/06 à 15:04", meta)
-	if err == nil {
-		epub.Date = date.String()
+	if err != nil {
+		date = time.Now()
 	}
+	epub.Date = date.Format(time.RFC3339)
 	epub.Creator = epub.FindMeta(article, "header .meta a[rel=\"author\"]")
 	epub.Contributors = epub.FindMetas(article, "header .meta .edited_by a")
 }
