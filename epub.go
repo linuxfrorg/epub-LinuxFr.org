@@ -434,9 +434,9 @@ func main() {
 	// Parse the command-line
 	var addr string
 	var logs string
-	flag.StringVar(&addr, "a", "127.0.0.1:8000", "Bind to this address:port")
+	flag.StringVar(&addr, "a", "127.0.0.1:9000", "Bind to this address:port")
 	flag.StringVar(&logs, "l", "-", "Use this file for logs")
-	flag.StringVar(&Host, "h", "linuxfr.org", "Use this host to fetch pages")
+	flag.StringVar(&Host, "H", "linuxfr.org", "Use this host to fetch pages")
 	flag.Parse()
 
 	// Logging
