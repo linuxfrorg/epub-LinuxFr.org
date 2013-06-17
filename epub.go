@@ -29,8 +29,8 @@ type Item struct {
 }
 
 type Epub struct {
-	Zip *zip.Writer
-	// TODO identifier / rights
+	Zip          *zip.Writer
+	Identifier   string
 	Title        string
 	Subject      string
 	Date         string
@@ -120,12 +120,11 @@ li.comment .content { border-left: 1px solid #93877B; padding-left: 5px; }
 	FooterHtml = "</body></html>"
 )
 
-// TODO cover
 var PackageTemplate = template.Must(template.New("package").Parse(`
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="pub-identifier" xml:lang="fr" version="3.0">
 	<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
 		<dc:language id="pub-language">fr</dc:language>
-		<dc:identifier id="pub-identifier">xxx</dc:identifier>
+		<dc:identifier id="pub-identifier">{{.Identifier}}</dc:identifier>
 		<dc:date>{{.Date}}</dc:date>
 		<meta property="dcterms:modified">{{.Date}}</meta>
 		{{if .Title}}<dc:title id="pub-title">{{.Title}}</dc:title>{{end}}
@@ -169,13 +168,15 @@ func toHtml(node xml.Node) string {
 		}
 	}
 
-	// TODO embed CSS & images
+	// TODO images
 	return node.InnerHtml()
 }
 
-func NewEpub(w io.Writer) (epub *Epub) {
+func NewEpub(w io.Writer, id string) (epub *Epub) {
 	z := zip.NewWriter(w)
-	epub = &Epub{Zip: z, Items: []Item{}}
+	epub = &Epub{Zip: z, Identifier: id, Items: []Item{
+		Item{"css", "RonRonnement.css", "text/css"},
+	}}
 	epub.AddMimetype()
 	epub.AddFile("META-INF/container.xml", Container)
 	epub.AddFile("EPUB/nav.html", Nav)
@@ -185,7 +186,7 @@ func NewEpub(w io.Writer) (epub *Epub) {
 
 func (epub *Epub) AddContent(article xml.Node) {
 	html := HeaderHtml +
-		`<article>` +
+		`<article itemtype="http://schema.org/Article" itemscope="">` +
 		toHtml(article) +
 		`</article>` +
 		FooterHtml
@@ -245,7 +246,7 @@ func (epub *Epub) FillMeta(article xml.Node) {
 	if err != nil {
 		date = time.Now()
 	}
-	epub.Date = date.Format(time.RFC3339)
+	epub.Date = date.Format("2006-01-02T15:04:05Z")
 	epub.Creator = epub.FindMeta(article, "header .meta a[rel=\"author\"]")
 	epub.Contributors = epub.FindMetas(article, "header .meta .edited_by a")
 }
@@ -343,7 +344,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", ContentType)
 
-	epub := NewEpub(w)
+	epub := NewEpub(w, r.URL.Path)
 	epub.FillMeta(article)
 	epub.AddContent(article)
 	epub.AddComments(article)
