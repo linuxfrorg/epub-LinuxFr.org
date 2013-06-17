@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"runtime"
 	"strings"
@@ -23,9 +24,16 @@ import (
 )
 
 type Item struct {
-	Id   string
-	Href string
-	Type string
+	Id    string
+	Href  string
+	Type  string
+	Spine bool
+}
+
+type Image struct {
+	Filename string
+	Content  string
+	Mimetype string
 }
 
 type Epub struct {
@@ -37,6 +45,8 @@ type Epub struct {
 	Creator      string
 	Contributors []string
 	Items        []Item
+	Images       []string
+	ChanImages   chan *Image
 }
 
 const (
@@ -135,18 +145,62 @@ var PackageTemplate = template.Must(template.New("package").Parse(`
 	</metadata>
 	<manifest>
 		<item id="nav" href="nav.html" media-type="application/xhtml+xml" properties="nav"/>
+		<item id="css" href="RonRonnement.css" media-type="text/css"/>
 		{{range .Items}}<item id="{{.Id}}" href="{{.Href}}" media-type="{{.Type}}"/>
 		{{end}}
 	</manifest>
 	<spine>
-		{{range .Items}}<itemref idref="{{.Id}}"/>
+		{{range .Items}}{{if .Spine}}<itemref idref="{{.Id}}"/>{{end}}
 		{{end}}
 	</spine>
 </package>`))
 
 var Host string
 
-func toHtml(node xml.Node) string {
+func NewEpub(w io.Writer, id string) (epub *Epub) {
+	epub = &Epub{
+		Zip:        zip.NewWriter(w),
+		Identifier: id,
+		ChanImages: make(chan *Image),
+		Items:      []Item{},
+		Images:     []string{},
+	}
+	epub.AddMimetype()
+	epub.AddFile("META-INF/container.xml", Container)
+	epub.AddFile("EPUB/nav.html", Nav)
+	epub.AddFile("EPUB/RonRonnement.css", Stylesheet)
+	return
+}
+
+func (epub *Epub) importImage(uri *url.URL) {
+	if uri.Host == "" {
+		uri.Host = Host
+	}
+
+	if uri.Scheme == "" {
+		uri.Scheme = "http"
+	}
+
+	resp, err := http.Get(uri.String())
+	if err != nil {
+		log.Print("Error: ", err)
+		epub.ChanImages <- nil
+		return
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Print("Error: ", err)
+		epub.ChanImages <- nil
+		return
+	}
+
+	filename := "EPUB" + uri.Path
+	mimetype := resp.Header.Get("Content-Type")
+	epub.ChanImages <- &Image{filename, string(body), mimetype}
+}
+
+func (epub *Epub) toHtml(node xml.Node) string {
 	// Remove some actions buttons/links
 	xpath := css.Convert(".actions, a.close, a.anchor, a.parent, .datePourCss, figure.score", css.LOCAL)
 	actions, err := node.Search(xpath)
@@ -168,30 +222,39 @@ func toHtml(node xml.Node) string {
 		}
 	}
 
-	// TODO images
-	return node.InnerHtml()
-}
+	// Import images
+	xpath = css.Convert("img", css.LOCAL)
+	imgs, err := node.Search(xpath)
+	if err == nil {
+		for _, img := range imgs {
+			uri, err := url.Parse(img.Attr("src"))
+			if err == nil {
+				found := false
+				for _, s := range epub.Images {
+					if s == uri.Path {
+						found = true
+					}
+				}
+				if !found {
+					go epub.importImage(uri)
+					epub.Images = append(epub.Images, uri.Path)
+				}
+				img.SetAttr("src", strings.Replace(uri.Path, "/", "", 1))
+			}
+		}
+	}
 
-func NewEpub(w io.Writer, id string) (epub *Epub) {
-	z := zip.NewWriter(w)
-	epub = &Epub{Zip: z, Identifier: id, Items: []Item{
-		Item{"css", "RonRonnement.css", "text/css"},
-	}}
-	epub.AddMimetype()
-	epub.AddFile("META-INF/container.xml", Container)
-	epub.AddFile("EPUB/nav.html", Nav)
-	epub.AddFile("EPUB/RonRonnement.css", Stylesheet)
-	return
+	return node.InnerHtml()
 }
 
 func (epub *Epub) AddContent(article xml.Node) {
 	html := HeaderHtml +
 		`<article itemtype="http://schema.org/Article" itemscope="">` +
-		toHtml(article) +
+		epub.toHtml(article) +
 		`</article>` +
 		FooterHtml
 	filename := "content.html"
-	epub.Items = append(epub.Items, Item{"item-content", filename, "application/xhtml+xml"})
+	epub.Items = append(epub.Items, Item{"item-content", filename, "application/xhtml+xml", true})
 	epub.AddFile("EPUB/"+filename, html)
 }
 
@@ -205,12 +268,12 @@ func (epub *Epub) AddComments(article xml.Node) {
 	for _, thread := range threads {
 		html := HeaderHtml +
 			`<ul class="threads"><li class="comment">` +
-			toHtml(thread) +
+			epub.toHtml(thread) +
 			`</li></ul>` +
 			FooterHtml
 		id := thread.Attr("id")
 		filename := id + ".html"
-		epub.Items = append(epub.Items, Item{id, filename, "application/xhtml+xml"})
+		epub.Items = append(epub.Items, Item{id, filename, "application/xhtml+xml", true})
 		epub.AddFile("EPUB/"+filename, html)
 	}
 }
@@ -285,6 +348,15 @@ func (epub *Epub) AddFile(filename, content string) (err error) {
 }
 
 func (epub *Epub) Close() {
+	for i := 0; i < len(epub.Images); i++ {
+		image := <-epub.ChanImages
+		if image != nil {
+			id := fmt.Sprintf("img-%d", i)
+			epub.AddFile(image.Filename, image.Content)
+			epub.Items = append(epub.Items, Item{id, image.Filename, image.Mimetype, false})
+		}
+	}
+
 	var opf bytes.Buffer
 	err := PackageTemplate.Execute(&opf, epub)
 	if err != nil {
