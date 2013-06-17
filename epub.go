@@ -68,11 +68,52 @@ const (
   </body>
 </html>`
 
+	Stylesheet = `
+body { font-family: sans-serif; }
+img { display: block; margin: 0 auto; max-width: 100%; border: none; }
+blockquote { border-left: 3px solid #4C575F; padding-left: 5px; margin: 10px 0 10px 10px; }
+code { white-space: pre-wrap; border: 1px solid #E9E6E4; border-radius: 4px; padding: 1px 4px; }
+pre code { display: block; border-width: 0 0 0 3px; border-color: #4C575F; }
+article, ul.threads > li.comment {
+	display: block;
+	padding: 10px;
+	border-radius: 6px;
+	border: 1px solid #93877B;
+	min-height: 70px;
+	line-height: 1.4em;
+	text-align: justify; }
+header .topic:after { content: " :"; }
+article .image { float: left; margin: 10px; }
+article h1 {
+	border-left: solid 6px #4C575F;
+	padding-left: 13px;
+	font-size: 1.5em;
+	margin-top: 7px;
+	margin-bottom: 8px; }
+article h1 a { color: inherit; text-decoration: none; }
+.meta { color: #93877B; }
+.meta a { color: inherit; font-weight: bold; text-decoration: none; }
+.tags ul { display: inline; }
+.tags ul li { display: inline; padding: 0; list-style: none; }
+.tags ul li:after { content: ", ";  }
+.tags ul li:last-child:after { content: "";  }
+ul.threads li { list-style: none; }
+li.comment > h2 { background: #E9E6E4; clear: right; }
+li.comment > h2 a { color: inherit; text-decoration: none; margin-bottom: 0; }
+li.comment .meta { margin-top: 5px; }
+li.comment .avatar { float: right; margin: 0 5px 5px 10px; }
+li.comment .content { border-left: 1px solid #93877B; padding-left: 5px; }
+.deleted { border-left: 3px solid red; font-style: italic; }
+.signature { color #999; font-size: 11px; }
+.signature:before { white-space: pre; content: "-- \a"; }
+`
+
 	HeaderHtml = XmlDeclaration + `
 <html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
   <head>
     <title>LinuxFr.org</title>
     <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="RonRonnement.css" />
   </head>
   <body>`
 
@@ -107,9 +148,29 @@ var PackageTemplate = template.Must(template.New("package").Parse(`
 var Host string
 
 func toHtml(node xml.Node) string {
-	// TODO fix links to LinuxFr.org
+	// Remove some actions buttons/links
+	xpath := css.Convert(".actions, a.close, a.anchor, a.parent, .datePourCss, figure.score", css.LOCAL)
+	actions, err := node.Search(xpath)
+	if err == nil {
+		for _, action := range actions {
+			action.Remove()
+		}
+	}
+
+	// Fix relative links
+	xpath = css.Convert("a", css.LOCAL)
+	links, err := node.Search(xpath)
+	if err == nil {
+		for _, link := range links {
+			href := link.Attr("href")
+			if len(href) > 2 && href[0] == '/' && href[1] != '/' {
+				link.SetAttr("href", "http://"+Host+href)
+			}
+		}
+	}
+
 	// TODO embed CSS & images
-	return HeaderHtml + node.InnerHtml() + FooterHtml
+	return node.InnerHtml()
 }
 
 func NewEpub(w io.Writer) (epub *Epub) {
@@ -118,16 +179,16 @@ func NewEpub(w io.Writer) (epub *Epub) {
 	epub.AddMimetype()
 	epub.AddFile("META-INF/container.xml", Container)
 	epub.AddFile("EPUB/nav.html", Nav)
+	epub.AddFile("EPUB/RonRonnement.css", Stylesheet)
 	return
 }
 
 func (epub *Epub) AddContent(article xml.Node) {
-	xpath := css.Convert(".content", css.LOCAL)
-	nodes, err := article.Search(xpath)
-	if err != nil || len(nodes) == 0 {
-		return
-	}
-	html := toHtml(nodes[0])
+	html := HeaderHtml +
+		`<article>` +
+		toHtml(article) +
+		`</article>` +
+		FooterHtml
 	filename := "content.html"
 	epub.Items = append(epub.Items, Item{"item-content", filename, "application/xhtml+xml"})
 	epub.AddFile("EPUB/"+filename, html)
@@ -141,7 +202,11 @@ func (epub *Epub) AddComments(article xml.Node) {
 		return
 	}
 	for _, thread := range threads {
-		html := toHtml(thread)
+		html := HeaderHtml +
+			`<ul class="threads"><li class="comment">` +
+			toHtml(thread) +
+			`</li></ul>` +
+			FooterHtml
 		id := thread.Attr("id")
 		filename := id + ".html"
 		epub.Items = append(epub.Items, Item{id, filename, "application/xhtml+xml"})
