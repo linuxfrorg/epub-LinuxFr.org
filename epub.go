@@ -107,6 +107,7 @@ article h1 a { color: inherit; text-decoration: none; }
 .tags ul li { display: inline; padding: 0; list-style: none; }
 .tags ul li:after { content: ", ";  }
 .tags ul li:last-child:after { content: "";  }
+ul.poll .result { background: #F1ABC5; font-size: x-small; border-top: 1px solid #4C575F; border-bottom: 1px solid #4C575F; }
 ul.threads li { list-style: none; }
 li.comment > h2 { background: #E9E6E4; clear: right; }
 li.comment > h2 a { color: inherit; text-decoration: none; margin-bottom: 0; }
@@ -408,6 +409,9 @@ func FetchArticle(uri string) (article xml.Node, err error) {
 
 func Content(w http.ResponseWriter, r *http.Request) {
 	uri := "http://" + Host + strings.Replace(r.URL.Path, ".epub", "", 1)
+	if strings.HasPrefix(r.URL.Path, "/sondages") {
+		uri += "?results=1"
+	}
 	article, err := FetchArticle(uri)
 	if err != nil {
 		http.NotFound(w, r)
