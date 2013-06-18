@@ -42,6 +42,7 @@ type Epub struct {
 	Title        string
 	Subject      string
 	Date         string
+	Cover        string
 	Creator      string
 	Contributors []string
 	Items        []Item
@@ -142,11 +143,12 @@ var PackageTemplate = template.Must(template.New("package").Parse(`
 		{{if .Creator}}<dc:creator id="pub-creator">{{.Creator}}</dc:creator>{{end}}
 		{{range .Contributors}}<dc:contributor>{{.}}</dc:contributor>
 		{{end}}
-		<dc:rights>xxx</dc:rights>
+		<meta name="cover" content="cover"/>
 	</metadata>
 	<manifest>
 		<item id="nav" href="nav.html" media-type="application/xhtml+xml" properties="nav"/>
 		<item id="css" href="RonRonnement.css" media-type="text/css"/>
+		<item id="cover" href="{{.Cover}}" media-type="image/png"/>
 		{{range .Items}}<item id="{{.Id}}" href="{{.Href}}" media-type="{{.Type}}"/>
 		{{end}}
 	</manifest>
@@ -196,7 +198,7 @@ func (epub *Epub) importImage(uri *url.URL) {
 		return
 	}
 
-	filename := "EPUB" + uri.Path
+	filename := strings.Replace(uri.Path, "/", "", 1)
 	mimetype := resp.Header.Get("Content-Type")
 	epub.ChanImages <- &Image{filename, string(body), mimetype}
 }
@@ -301,6 +303,23 @@ func (epub *Epub) FindMetas(article xml.Node, selector string) []string {
 	return metas
 }
 
+func (epub *Epub) FindCover(article xml.Node) string {
+	root := article.MyDocument().Root()
+	xpath := css.Convert("#branding > h1", css.LOCAL)
+	nodes, err := root.Search(xpath)
+	if err != nil || len(nodes) == 0 {
+		return ""
+	}
+	style := nodes[0].Attr("style")
+	parts := strings.Split(style, "'")
+	if len(parts) < 2 {
+		return ""
+	}
+	go epub.importImage(&url.URL{Host: Host, Path: parts[1]})
+	epub.Images = append(epub.Images, parts[1])
+	return strings.Replace(parts[1], "/", "", 1)
+}
+
 func (epub *Epub) FillMeta(article xml.Node) {
 	epub.Title = epub.FindMeta(article, "header h1 a:last-child")
 	epub.Subject = epub.FindMeta(article, "header h1 a.topic")
@@ -311,6 +330,7 @@ func (epub *Epub) FillMeta(article xml.Node) {
 		date = time.Now()
 	}
 	epub.Date = date.Format("2006-01-02T15:04:05Z")
+	epub.Cover = epub.FindCover(article)
 	epub.Creator = epub.FindMeta(article, "header .meta a[rel=\"author\"]")
 	epub.Contributors = epub.FindMetas(article, "header .meta .edited_by a")
 }
@@ -352,9 +372,12 @@ func (epub *Epub) Close() {
 	for i := 0; i < len(epub.Images); i++ {
 		image := <-epub.ChanImages
 		if image != nil {
-			id := fmt.Sprintf("img-%d", i)
-			epub.AddFile(image.Filename, image.Content)
-			epub.Items = append(epub.Items, Item{id, image.Filename, image.Mimetype, false})
+			epub.AddFile("EPUB/"+image.Filename, image.Content)
+			if image.Filename != epub.Cover {
+				id := fmt.Sprintf("img-%d", i)
+				item := Item{id, image.Filename, image.Mimetype, false}
+				epub.Items = append(epub.Items, item)
+			}
 		}
 	}
 
