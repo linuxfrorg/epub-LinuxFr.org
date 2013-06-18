@@ -116,7 +116,7 @@ li.comment .meta { margin-top: 5px; }
 li.comment .avatar { float: right; margin: 0 5px 5px 10px; }
 li.comment .content { border-left: 1px solid #93877B; padding-left: 5px; }
 .deleted { border-left: 3px solid red; font-style: italic; }
-.signature { color #999; font-size: 11px; }
+.signature { color: #999; font-size: 11px; }
 .signature:before { white-space: pre; content: "-- \a"; }
 `
 
@@ -205,7 +205,7 @@ func (epub *Epub) importImage(uri *url.URL) {
 
 func (epub *Epub) toHtml(node xml.Node) string {
 	// Remove some actions buttons/links
-	xpath := css.Convert(".actions, a.close, a.anchor, a.parent, .datePourCss, figure.score", css.LOCAL)
+	xpath := css.Convert(".actions, a.close, a.anchor, a.parent, .datePourCss, figure.score, meta", css.LOCAL)
 	actions, err := node.Search(xpath)
 	if err == nil {
 		for _, action := range actions {
