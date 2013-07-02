@@ -190,6 +190,7 @@ func (epub *Epub) importImage(uri *url.URL) {
 		epub.ChanImages <- nil
 		return
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -339,13 +340,13 @@ func (epub *Epub) AddMimetype() (err error) {
 	header := &zip.FileHeader{Name: "mimetype", Method: zip.Store}
 	f, err := epub.Zip.CreateHeader(header)
 	if err != nil {
-		log.Println(err)
+		log.Print("Zip error: ", err)
 		return
 	}
 
 	_, err = f.Write([]byte(ContentType))
 	if err != nil {
-		log.Println(err)
+		log.Print("Zip error: ", err)
 		return
 	}
 
@@ -355,13 +356,13 @@ func (epub *Epub) AddMimetype() (err error) {
 func (epub *Epub) AddFile(filename, content string) (err error) {
 	f, err := epub.Zip.Create(filename)
 	if err != nil {
-		log.Println(err)
+		log.Print("Zip error: ", err)
 		return
 	}
 
 	_, err = f.Write([]byte(content))
 	if err != nil {
-		log.Println(err)
+		log.Print("Zip error: ", err)
 		return
 	}
 
@@ -384,14 +385,14 @@ func (epub *Epub) Close() {
 	var opf bytes.Buffer
 	err := PackageTemplate.Execute(&opf, epub)
 	if err != nil {
-		log.Println(err)
+		log.Print("Template error: ", err)
 		return
 	}
 
 	epub.AddFile("EPUB/package.opf", XmlDeclaration+opf.String())
 	err = epub.Zip.Close()
 	if err != nil {
-		log.Println(err)
+		log.Print("Error on closing zip: ", err)
 	}
 }
 
