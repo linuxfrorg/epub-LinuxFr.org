@@ -202,7 +202,13 @@ func (epub *Epub) importImage(uri *url.URL) {
 
 	filename := strings.Replace(uri.Path, "/", "", 1)
 	mimetype := resp.Header.Get("Content-Type")
-	epub.ChanImages <- &Image{filename, string(body), mimetype}
+	img := &Image{filename, string(body), mimetype}
+	select {
+	case epub.ChanImages <- img:
+		// OK
+	case <-time.After(30 * time.Second):
+		log.Printf("Timeout for %s", filename)
+	}
 }
 
 func (epub *Epub) toHtml(node xml.Node) string {
