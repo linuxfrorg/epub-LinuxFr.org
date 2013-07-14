@@ -398,6 +398,7 @@ func (epub *Epub) Close() {
 }
 
 func FetchArticle(uri string) (article xml.Node, err error) {
+	log.Printf("Fetch %s", uri)
 	resp, err := http.Get(uri)
 	if err != nil {
 		return
@@ -496,7 +497,12 @@ func main() {
 
 	// Start the HTTP server
 	log.Printf("Listening on http://%s/\n", addr)
-	err := http.ListenAndServe(addr, nil)
+	server := &http.Server{
+		Addr:         addr,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
+	err := server.ListenAndServe()
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
