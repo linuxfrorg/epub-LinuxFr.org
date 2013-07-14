@@ -18,6 +18,7 @@ import (
 	"net/url"
 	"os"
 	"runtime"
+	"runtime/pprof"
 	"strings"
 	"syscall"
 	"time"
@@ -456,6 +457,10 @@ func Status(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "OK")
 }
 
+func Profiling(w http.ResponseWriter, r *http.Request) {
+	pprof.WriteHeapProfile(w)
+}
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
@@ -480,6 +485,7 @@ func main() {
 	// Routing
 	m := pat.New()
 	m.Get("/status", http.HandlerFunc(Status))
+	m.Get("/profiling", http.HandlerFunc(Profiling))
 	m.Get("/news/:slug.epub", http.HandlerFunc(Content))
 	m.Get("/users/:user/journaux/:slug.epub", http.HandlerFunc(Content))
 	m.Get("/forums/:forum/posts/:slug.epub", http.HandlerFunc(Content))
