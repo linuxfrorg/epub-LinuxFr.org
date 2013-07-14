@@ -191,9 +191,9 @@ func (epub *Epub) importImage(uri *url.URL) {
 		epub.ChanImages <- nil
 		return
 	}
-	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	if err != nil {
 		log.Print("Error: ", err)
 		epub.ChanImages <- nil
@@ -402,9 +402,9 @@ func FetchArticle(uri string) (article xml.Node, err error) {
 	if err != nil {
 		return
 	}
-	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	if err != nil {
 		log.Printf("Error on ioutil.ReadAll for %s: %s\n", uri, err)
 		return
