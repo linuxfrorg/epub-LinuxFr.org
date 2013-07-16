@@ -12,6 +12,7 @@ import (
 	"github.com/moovweb/gokogiri/xml"
 	"html/template"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -191,8 +192,7 @@ func (epub *Epub) importImage(uri *url.URL) {
 		return
 	}
 
-	body := make([]byte, 0, resp.ContentLength)
-	_, err = io.ReadFull(resp.Body, body)
+	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
 		log.Print("Error: ", err)
@@ -410,11 +410,10 @@ func FetchArticle(uri string) (article xml.Node, err error) {
 		return
 	}
 
-	body := make([]byte, 0, resp.ContentLength)
-	_, err = io.ReadFull(resp.Body, body)
+	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		log.Printf("Error on io.ReadFull for %s: %s\n", uri, err)
+		log.Printf("Error on ioutil.ReadAll for %s: %s\n", uri, err)
 		return
 	}
 
