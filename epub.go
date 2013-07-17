@@ -201,7 +201,7 @@ func (epub *Epub) importImage(uri *url.URL) {
 		epub.ChanImages <- nil
 		return
 	}
-	if res.pContentLength > maxSize {
+	if resp.ContentLength > maxSize {
 		log.Printf("Exceeded max size for %s: %d\n", uri, resp.ContentLength)
 		epub.ChanImages <- nil
 		return
