@@ -52,6 +52,9 @@ type Epub struct {
 }
 
 const (
+	// The maximal size for an image is 5MB
+	maxSize = 5 * (1 << 20)
+
 	ContentType    = "application/epub+zip"
 	XmlDeclaration = `<?xml version="1.0" encoding="utf-8"?>`
 
@@ -191,9 +194,20 @@ func (epub *Epub) importImage(uri *url.URL) {
 		epub.ChanImages <- nil
 		return
 	}
+	defer resp.Body.Close()
+
+	if res.StatusCode != 200 {
+		log.Printf("Status code of %s is: %d\n", uri, res.StatusCode)
+		epub.ChanImages <- nil
+		return
+	}
+	if res.ContentLength > maxSize {
+		log.Printf("Exceeded max size for %s: %d\n", uri, res.ContentLength)
+		epub.ChanImages <- nil
+		return
+	}
 
 	body, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
 	if err != nil {
 		log.Print("Error: ", err)
 		epub.ChanImages <- nil
