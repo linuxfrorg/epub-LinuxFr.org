@@ -1,7 +1,6 @@
 package main
 
 import (
-	_ "net/http/pprof"
 	"archive/zip"
 	"bytes"
 	"errors"
@@ -16,6 +15,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"runtime"
@@ -33,8 +33,8 @@ type Item struct {
 
 type Image struct {
 	Filename string
-	Content  string
 	Mimetype string
+	Content  []byte
 }
 
 type Epub struct {
@@ -173,9 +173,9 @@ func NewEpub(w io.Writer, id string) (epub *Epub) {
 		Images:     []string{},
 	}
 	epub.AddMimetype()
-	epub.AddFile("META-INF/container.xml", Container)
-	epub.AddFile("EPUB/nav.html", Nav)
-	epub.AddFile("EPUB/RonRonnement.css", Stylesheet)
+	epub.AddFile("META-INF/container.xml", []byte(Container))
+	epub.AddFile("EPUB/nav.html", []byte(Nav))
+	epub.AddFile("EPUB/RonRonnement.css", []byte(Stylesheet))
 	return
 }
 
@@ -216,7 +216,7 @@ func (epub *Epub) importImage(uri *url.URL) {
 
 	filename := strings.Replace(uri.Path, "/", "", 1)
 	mimetype := resp.Header.Get("Content-Type")
-	img := &Image{filename, string(body), mimetype}
+	img := &Image{filename, mimetype, body}
 	select {
 	case epub.ChanImages <- img:
 		// OK
@@ -280,7 +280,7 @@ func (epub *Epub) AddContent(article xml.Node) {
 		FooterHtml
 	filename := "content.html"
 	epub.Items = append(epub.Items, Item{"item-content", filename, "application/xhtml+xml", true})
-	epub.AddFile("EPUB/"+filename, html)
+	epub.AddFile("EPUB/"+filename, []byte(html))
 }
 
 func (epub *Epub) AddComments(article xml.Node) {
@@ -299,7 +299,7 @@ func (epub *Epub) AddComments(article xml.Node) {
 		id := thread.Attr("id")
 		filename := id + ".html"
 		epub.Items = append(epub.Items, Item{id, filename, "application/xhtml+xml", true})
-		epub.AddFile("EPUB/"+filename, html)
+		epub.AddFile("EPUB/"+filename, []byte(html))
 	}
 }
 
@@ -374,14 +374,14 @@ func (epub *Epub) AddMimetype() (err error) {
 	return
 }
 
-func (epub *Epub) AddFile(filename, content string) (err error) {
+func (epub *Epub) AddFile(filename string, content []byte) (err error) {
 	f, err := epub.Zip.Create(filename)
 	if err != nil {
 		log.Print("Zip error: ", err)
 		return
 	}
 
-	_, err = f.Write([]byte(content))
+	_, err = f.Write(content)
 	if err != nil {
 		log.Print("Zip error: ", err)
 		return
@@ -410,7 +410,7 @@ func (epub *Epub) Close() {
 		return
 	}
 
-	epub.AddFile("EPUB/package.opf", XmlDeclaration+opf.String())
+	epub.AddFile("EPUB/package.opf", []byte(XmlDeclaration+opf.String()))
 	err = epub.Zip.Close()
 	if err != nil {
 		log.Print("Error on closing zip: ", err)
