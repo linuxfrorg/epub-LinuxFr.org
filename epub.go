@@ -426,6 +426,7 @@ func (epub *Epub) Close() {
 	if err != nil {
 		log.Print("Error on closing zip: ", err)
 	}
+	epub.Zip = nil
 }
 
 func FetchArticle(uri string) (article xml.Node, err error) {
