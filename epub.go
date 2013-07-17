@@ -164,6 +164,17 @@ var PackageTemplate = template.Must(template.New("package").Parse(`
 
 var Host string
 
+var selector2xpath map[string]string
+
+func Css2xpath(selector string) string {
+	xpath, ok := selector2xpath[selector]
+	if !ok {
+		xpath = css.Convert(selector, css.LOCAL)
+		selector2xpath[selector] = xpath
+	}
+	return xpath
+}
+
 func NewEpub(w io.Writer, id string) (epub *Epub) {
 	epub = &Epub{
 		Zip:        zip.NewWriter(w),
@@ -227,7 +238,7 @@ func (epub *Epub) importImage(uri *url.URL) {
 
 func (epub *Epub) toHtml(node xml.Node) string {
 	// Remove some actions buttons/links
-	xpath := css.Convert(".actions, a.close, a.anchor, a.parent, .datePourCss, figure.score, meta", css.LOCAL)
+	xpath := Css2xpath(".actions, a.close, a.anchor, a.parent, .datePourCss, figure.score, meta")
 	actions, err := node.Search(xpath)
 	if err == nil {
 		for _, action := range actions {
@@ -236,7 +247,7 @@ func (epub *Epub) toHtml(node xml.Node) string {
 	}
 
 	// Fix relative links
-	xpath = css.Convert("a", css.LOCAL)
+	xpath = Css2xpath("a")
 	links, err := node.Search(xpath)
 	if err == nil {
 		for _, link := range links {
@@ -248,7 +259,7 @@ func (epub *Epub) toHtml(node xml.Node) string {
 	}
 
 	// Import images
-	xpath = css.Convert("img", css.LOCAL)
+	xpath = Css2xpath("img")
 	imgs, err := node.Search(xpath)
 	if err == nil {
 		for _, img := range imgs {
@@ -285,7 +296,7 @@ func (epub *Epub) AddContent(article xml.Node) {
 
 func (epub *Epub) AddComments(article xml.Node) {
 	list := article.NextSibling()
-	xpath := css.Convert(".threads>li", css.LOCAL)
+	xpath := Css2xpath(".threads>li")
 	threads, err := list.Search(xpath)
 	if err != nil {
 		return
@@ -304,7 +315,7 @@ func (epub *Epub) AddComments(article xml.Node) {
 }
 
 func (epub *Epub) FindMeta(article xml.Node, selector string) string {
-	xpath := css.Convert(selector, css.LOCAL)
+	xpath := Css2xpath(selector)
 	nodes, err := article.Search(xpath)
 	if err != nil || len(nodes) == 0 {
 		return ""
@@ -313,7 +324,7 @@ func (epub *Epub) FindMeta(article xml.Node, selector string) string {
 }
 
 func (epub *Epub) FindMetas(article xml.Node, selector string) []string {
-	xpath := css.Convert(selector, css.LOCAL)
+	xpath := Css2xpath(selector)
 	nodes, err := article.Search(xpath)
 	if err != nil {
 		return nil
@@ -327,7 +338,7 @@ func (epub *Epub) FindMetas(article xml.Node, selector string) []string {
 
 func (epub *Epub) FindCover(article xml.Node) string {
 	root := article.MyDocument().Root()
-	xpath := css.Convert("#branding > h1", css.LOCAL)
+	xpath := Css2xpath("#branding > h1")
 	nodes, err := root.Search(xpath)
 	if err != nil || len(nodes) == 0 {
 		return ""
@@ -437,7 +448,7 @@ func FetchArticle(uri string) (article xml.Node, err error) {
 		return
 	}
 
-	xpath := css.Convert("#contents article", css.LOCAL)
+	xpath := Css2xpath("#contents article")
 	articles, err := doc.Root().Search(xpath)
 	if err != nil {
 		log.Printf("Gokogiri error: %s\n", err)
@@ -481,6 +492,7 @@ func Status(w http.ResponseWriter, r *http.Request) {
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	runtime.MemProfileRate = 1
+	selector2xpath = make(map[string]string)
 
 	// Parse the command-line
 	var addr string
