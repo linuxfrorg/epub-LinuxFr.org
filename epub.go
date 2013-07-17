@@ -482,6 +482,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	epub.AddContent(article)
 	epub.AddComments(article)
 	epub.Close()
+	article.MyDocument().Free()
 }
 
 // Returns 200 OK if the server is running (for monitoring)
