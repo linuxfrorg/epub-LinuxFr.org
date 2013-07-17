@@ -480,6 +480,7 @@ func Status(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
+	runtime.MemProfileRate = 1
 
 	// Parse the command-line
 	var addr string
