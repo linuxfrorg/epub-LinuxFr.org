@@ -196,13 +196,13 @@ func (epub *Epub) importImage(uri *url.URL) {
 	}
 	defer resp.Body.Close()
 
-	if res.StatusCode != 200 {
-		log.Printf("Status code of %s is: %d\n", uri, res.StatusCode)
+	if resp.StatusCode != 200 {
+		log.Printf("Status code of %s is: %d\n", uri, resp.StatusCode)
 		epub.ChanImages <- nil
 		return
 	}
-	if res.ContentLength > maxSize {
-		log.Printf("Exceeded max size for %s: %d\n", uri, res.ContentLength)
+	if res.pContentLength > maxSize {
+		log.Printf("Exceeded max size for %s: %d\n", uri, resp.ContentLength)
 		epub.ChanImages <- nil
 		return
 	}
