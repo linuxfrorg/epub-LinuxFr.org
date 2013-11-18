@@ -245,6 +245,16 @@ func (epub *Epub) toHtml(node xml.Node) string {
 		}
 	}
 
+	// Nullify itemprop attributes (I can't find a way to remove them)
+	node.SetAttr("itemtype", "")
+	xpath = Css2xpath("[itemprop]")
+	props, err := node.Search(xpath)
+	if err == nil {
+		for _, prop := range props {
+			prop.SetAttr("itemprop", "")
+		}
+	}
+
 	// Fix relative links
 	xpath = Css2xpath("a")
 	links, err := node.Search(xpath)
@@ -279,14 +289,21 @@ func (epub *Epub) toHtml(node xml.Node) string {
 		}
 	}
 
-	return node.InnerHtml()
+	flags := xml.XML_SAVE_AS_HTML | xml.XML_SAVE_FORMAT | xml.XML_SAVE_XHTML
+	b, size := node.SerializeWithFormat(flags, nil, nil)
+	if b == nil {
+		return ""
+	}
+	out := string(b[:size])
+	out = strings.Replace(out, ` itemscope=""`, "", 1)
+	out = strings.Replace(out, ` itemtype=""`, "", 1)
+	out = strings.Replace(out, ` itemprop=""`, "", -1)
+	return out
 }
 
 func (epub *Epub) AddContent(article xml.Node) {
 	html := HeaderHtml +
-		`<article itemtype="http://schema.org/Article" itemscope="">` +
 		epub.toHtml(article) +
-		`</article>` +
 		FooterHtml
 	filename := "content.html"
 	epub.Items = append(epub.Items, Item{"item-content", filename, "application/xhtml+xml", true})
