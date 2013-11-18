@@ -235,7 +235,7 @@ func (epub *Epub) importImage(uri *url.URL) {
 	}
 }
 
-func (epub *Epub) toHtml(node xml.Node) string {
+func (epub *Epub) toHtml(node xml.Node, inner bool) string {
 	// Remove some actions buttons/links
 	xpath := Css2xpath(".actions, a.close, a.anchor, a.parent, .datePourCss, figure.score, meta")
 	actions, err := node.Search(xpath)
@@ -289,6 +289,10 @@ func (epub *Epub) toHtml(node xml.Node) string {
 		}
 	}
 
+	if inner {
+		return node.InnerHtml()
+	}
+
 	flags := xml.XML_SAVE_AS_HTML | xml.XML_SAVE_FORMAT | xml.XML_SAVE_XHTML
 	b, size := node.SerializeWithFormat(flags, nil, nil)
 	if b == nil {
@@ -303,7 +307,7 @@ func (epub *Epub) toHtml(node xml.Node) string {
 
 func (epub *Epub) AddContent(article xml.Node) {
 	html := HeaderHtml +
-		epub.toHtml(article) +
+		epub.toHtml(article, false) +
 		FooterHtml
 	filename := "content.html"
 	epub.Items = append(epub.Items, Item{"item-content", filename, "application/xhtml+xml", true})
@@ -320,7 +324,7 @@ func (epub *Epub) AddComments(article xml.Node) {
 	for _, thread := range threads {
 		html := HeaderHtml +
 			`<ul class="threads"><li class="comment">` +
-			epub.toHtml(thread) +
+			epub.toHtml(thread, true) +
 			`</li></ul>` +
 			FooterHtml
 		id := thread.Attr("id")
