@@ -245,13 +245,23 @@ func (epub *Epub) toHtml(node xml.Node) string {
 		}
 	}
 
-	// Nullify itemprop attributes (I can't find a way to remove them)
-	node.SetAttr("itemtype", "")
+	// Remove itemprop attributes
+	itemtype := node.Attribute("itemtype")
+	if itemtype != nil {
+		itemtype.Remove()
+	}
+	itemscope := node.Attribute("itemscope")
+	if itemscope != nil {
+		itemscope.Remove()
+	}
 	xpath = Css2xpath("[itemprop]")
 	props, err := node.Search(xpath)
 	if err == nil {
 		for _, prop := range props {
-			prop.SetAttr("itemprop", "")
+			attr := prop.Attribute("itemprop")
+			if attr != nil {
+				attr.Remove()
+			}
 		}
 	}
 
@@ -294,11 +304,7 @@ func (epub *Epub) toHtml(node xml.Node) string {
 	if b == nil {
 		return ""
 	}
-	out := string(b[:size])
-	out = strings.Replace(out, ` itemscope=""`, "", 1)
-	out = strings.Replace(out, ` itemtype=""`, "", 1)
-	out = strings.Replace(out, ` itemprop=""`, "", -1)
-	return out
+	return string(b[:size])
 }
 
 func (epub *Epub) AddContent(article xml.Node) {
