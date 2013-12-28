@@ -6,10 +6,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/bmizerany/pat"
-	"github.com/moovweb/gokogiri"
-	"github.com/moovweb/gokogiri/css"
-	"github.com/moovweb/gokogiri/xml"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -21,6 +17,11 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/bmizerany/pat"
+	"github.com/moovweb/gokogiri"
+	"github.com/moovweb/gokogiri/css"
+	"github.com/moovweb/gokogiri/xml"
 )
 
 type Item struct {
@@ -271,8 +272,12 @@ func (epub *Epub) toHtml(node xml.Node) string {
 	if err == nil {
 		for _, link := range links {
 			href := link.Attr("href")
-			if len(href) > 2 && href[0] == '/' && href[1] != '/' {
-				link.SetAttr("href", "http://"+Host+href)
+			if len(href) > 2 && href[0] == '/' {
+				if href[1] == '/' {
+					link.SetAttr("href", "http:"+href)
+				} else {
+					link.SetAttr("href", "http://"+Host+href)
+				}
 			}
 		}
 	}
