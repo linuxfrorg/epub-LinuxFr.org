@@ -8,10 +8,10 @@ comments.
 How to use it?
 --------------
 
-[Install Go 1](http://golang.org/doc/install) and don't forget to set `$GOPATH`
+[Install Go](http://golang.org/doc/install) and don't forget to set `$GOPATH`
 
     # aptitude install libonig-dev libxml2-dev pkg-config
-    $ go get -u github.com/nono/epub-LinuxFr.org
+    $ go get -u github.com/linuxfrorg/epub-LinuxFr.org
     $ epub-LinuxFr.org [-addr addr] [-l logs]
 
 And, to display the help:
@@ -22,7 +22,7 @@ And, to display the help:
 See also
 --------
 
-* [Git repository](http://github.com/nono/epub-LinuxFr.org)
+* [Git repository](https://github.com/linuxfrorg/epub-LinuxFr.org)
 
 
 Copyright
