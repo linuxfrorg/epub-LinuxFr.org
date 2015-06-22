@@ -504,6 +504,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", ContentType)
+	w.Header().Add("Link", fmt.Sprintf("<%s>; rel=\"canonical\"", uri))
 
 	epub := NewEpub(w, r.URL.Path)
 	epub.FillMeta(article)
