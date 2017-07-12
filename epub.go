@@ -19,9 +19,9 @@ import (
 	"time"
 
 	"github.com/bmizerany/pat"
-	"github.com/moovweb/gokogiri"
-	"github.com/moovweb/gokogiri/css"
-	"github.com/moovweb/gokogiri/xml"
+	"github.com/jbowtie/gokogiri"
+	"github.com/jbowtie/gokogiri/css"
+	"github.com/jbowtie/gokogiri/xml"
 )
 
 type Item struct {
