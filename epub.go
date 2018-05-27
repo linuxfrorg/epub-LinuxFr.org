@@ -196,7 +196,7 @@ func (epub *Epub) importImage(uri *url.URL) {
 	}
 
 	if uri.Scheme == "" {
-		uri.Scheme = "http"
+		uri.Scheme = "https"
 	}
 
 	resp, err := http.Get(uri.String())
@@ -274,9 +274,9 @@ func (epub *Epub) toHtml(node xml.Node) string {
 			href := link.Attr("href")
 			if len(href) > 2 && href[0] == '/' {
 				if href[1] == '/' {
-					link.SetAttr("href", "http:"+href)
+					link.SetAttr("href", "https:"+href)
 				} else {
-					link.SetAttr("href", "http://"+Host+href)
+					link.SetAttr("href", "https://"+Host+href)
 				}
 			}
 		}
@@ -493,7 +493,7 @@ func FetchArticle(uri string) (article xml.Node, err error) {
 }
 
 func Content(w http.ResponseWriter, r *http.Request) {
-	uri := "http://" + Host + strings.Replace(r.URL.Path, ".epub", "", 1)
+	uri := "https://" + Host + strings.Replace(r.URL.Path, ".epub", "", 1)
 	if strings.HasPrefix(r.URL.Path, "/sondages") {
 		uri += "?results=1"
 	}
