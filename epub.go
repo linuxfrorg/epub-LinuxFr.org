@@ -184,7 +184,9 @@ func NewEpub(w io.Writer, id string) (epub *Epub) {
 		Images:     []string{},
 	}
 	epub.AddMimetype()
+	epub.AddDir("META-INF")
 	epub.AddFile("META-INF/container.xml", []byte(Container))
+	epub.AddDir("EPUB")
 	epub.AddFile("EPUB/nav.html", []byte(Nav))
 	epub.AddFile("EPUB/RonRonnement.css", []byte(Stylesheet))
 	return
@@ -410,6 +412,14 @@ func (epub *Epub) AddMimetype() (err error) {
 	}
 
 	return
+}
+
+func (epub *Epub) AddDir(dirname string) error {
+	_, err := epub.Zip.Create(dirname + "/")
+	if err != nil {
+		log.Print("Zip error: ", err)
+	}
+	return err
 }
 
 func (epub *Epub) AddFile(filename string, content []byte) (err error) {
