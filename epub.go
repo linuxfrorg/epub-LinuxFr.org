@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"runtime"
 	"strings"
 	"syscall"
@@ -76,7 +77,7 @@ const (
       <h1>Sommaire</h1>
       <nav xmlns:epub="http://www.idpf.org/2007/ops" epub:type="toc" id="toc">
         <ol>
-          <li><a href="content.html">Aller au contenu</a></li>
+          <li><a href="content.xhtml">Aller au contenu</a></li>
         </ol>
       </nav>
     </section>
@@ -150,7 +151,7 @@ var PackageTemplate = template.Must(template.New("package").Parse(`
 		<meta name="cover" content="cover"/>
 	</metadata>
 	<manifest>
-		<item id="nav" href="nav.html" media-type="application/xhtml+xml" properties="nav"/>
+		<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
 		<item id="css" href="RonRonnement.css" media-type="text/css"/>
 		<item id="cover" href="{{.Cover}}" media-type="image/png"/>
 		{{range .Items}}<item id="{{.Id}}" href="{{.Href}}" media-type="{{.Type}}"/>
@@ -187,12 +188,12 @@ func NewEpub(w io.Writer, id string) (epub *Epub) {
 	epub.AddDir("META-INF")
 	epub.AddFile("META-INF/container.xml", []byte(Container))
 	epub.AddDir("EPUB")
-	epub.AddFile("EPUB/nav.html", []byte(Nav))
+	epub.AddFile("EPUB/nav.xhtml", []byte(Nav))
 	epub.AddFile("EPUB/RonRonnement.css", []byte(Stylesheet))
 	return
 }
 
-func (epub *Epub) importImage(uri *url.URL) {
+func (epub *Epub) importImage(uri *url.URL, filename string) {
 	if uri.Host == "" {
 		uri.Host = Host
 	}
@@ -227,7 +228,6 @@ func (epub *Epub) importImage(uri *url.URL) {
 		return
 	}
 
-	filename := strings.Replace(uri.Path, "/", "", 1)
 	mimetype := resp.Header.Get("Content-Type")
 	img := &Image{filename, mimetype, body}
 	select {
@@ -297,11 +297,15 @@ func (epub *Epub) toHtml(node xml.Node) string {
 						found = true
 					}
 				}
+				filename := strings.Replace(uri.Path, "/", "", -1)
+				if len(filename) > 64 {
+					filename = filename[:60] + path.Ext(filename)
+				}
 				if !found {
-					go epub.importImage(uri)
+					go epub.importImage(uri, filename)
 					epub.Images = append(epub.Images, uri.Path)
 				}
-				img.SetAttr("src", strings.Replace(uri.Path, "/", "", 1))
+				img.SetAttr("src", filename)
 			}
 		}
 	}
@@ -318,7 +322,7 @@ func (epub *Epub) AddContent(article xml.Node) {
 	html := HeaderHtml +
 		epub.toHtml(article) +
 		FooterHtml
-	filename := "content.html"
+	filename := "content.xhtml"
 	epub.Items = append(epub.Items, Item{"item-content", filename, "application/xhtml+xml", true})
 	epub.AddFile("EPUB/"+filename, []byte(html))
 }
@@ -377,9 +381,10 @@ func (epub *Epub) FindCover(article xml.Node) string {
 	if len(parts) < 2 {
 		return ""
 	}
-	go epub.importImage(&url.URL{Host: Host, Path: parts[1]})
+	filename := strings.Replace(parts[1], "/", "", -1)
+	go epub.importImage(&url.URL{Host: Host, Path: parts[1]}, filename)
 	epub.Images = append(epub.Images, parts[1])
-	return strings.Replace(parts[1], "/", "", 1)
+	return filename
 }
 
 func (epub *Epub) FillMeta(article xml.Node) {
