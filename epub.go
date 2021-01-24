@@ -3,6 +3,8 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
@@ -299,7 +301,8 @@ func (epub *Epub) toHtml(node xml.Node) string {
 				}
 				filename := strings.Replace(uri.Path, "/", "", -1)
 				if len(filename) > 64 {
-					filename = filename[:60] + path.Ext(filename)
+					hashpart := sha256.Sum224([]byte(uri.String()))
+					filename = hex.EncodeToString(hashpart[:]) + path.Ext(filename)
 				}
 				if !found {
 					go epub.importImage(uri, filename)
