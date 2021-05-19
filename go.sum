@@ -1,0 +1,6 @@
+github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f h1:gOO/tNZMjjvTKZWpY7YnXC72ULNLErRtp94LountVE8=
+github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f/go.mod h1:8rLXio+WjiTceGBHIoTvn60HIbs7Hm7bcHjyrSqYB9c=
+github.com/jbowtie/gokogiri v0.0.0-20190226131917-228cd046ce43 h1:ITE9oIAaA8TqE3WDHkd0u54r/gzjabroDOmkCMas+HI=
+github.com/jbowtie/gokogiri v0.0.0-20190226131917-228cd046ce43/go.mod h1:C3R3VzPq+DAwilxue7DiV6F2QL1rrQX0L56GyI+sBxM=
+github.com/moovweb/rubex v0.0.2-0.20130508223049-b3d9ff6ad7d9 h1:vlRB7KzXbAMXdsBYGzi+RSlRc3deRnH7V6Jyk2e5zS8=
+github.com/moovweb/rubex v0.0.2-0.20130508223049-b3d9ff6ad7d9/go.mod h1:90aE2qyzrZcSjdtHLiLvKXwXepSU2Xov6T/3g/rTEt4=

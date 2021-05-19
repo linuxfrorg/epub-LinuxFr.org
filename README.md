@@ -12,12 +12,51 @@ How to use it?
 
     # aptitude install libonig-dev libxml2-dev pkg-config
     $ go get -u github.com/linuxfrorg/epub-LinuxFr.org
-    $ epub-LinuxFr.org [-addr addr] [-l logs]
+    $ epub-LinuxFr.org [-addr addr] [-l logs] [-H host]
 
 And, to display the help:
 
     $ epub-LinuxFr.org -h
+How to use it? (with Docker)
+-------------------------------
 
+Build and run Docker image:
+
+    $ docker build -t linuxfr.org-epub .
+    $ docker run --publish 9000:9000 linuxfr.org-epub
+    or
+    $ docker run --publish 9000:9000 --env HOST=somewebserver linuxfr.org-epub
+
+Caveats
+-------
+
+- require https for host
+- not statically built (so libxml2, libonig2 and probably ca-certificates needed for deployment)
+- answers HTTP 404 when something is wrong (unable to fetch, bad HTTP verb, bad content type, etc.)
+- base64 inline images are not supported (log "Error: Get data:image/svg+xml;base64,...%0A: unsupported protocol scheme "data")
+
+Testsuite
+---------
+Testsuite requires docker-compose.
+
+```
+cd tests/
+docker-compose up --build
+DEBUG=1 ./epub-tests.sh
+```
+
+Extra checks (linter for Dockefile and vulnerability/secret scan):
+
+```bash
+for image in Dockerfile tests/Dockerfile tests/cert-web/Dockerfile
+do
+  docker run --rm --interactive hadolint/hadolint < "$image"
+  docker run --rm --volume $(pwd)/$image:/app/Dockerfile --workdir /app replicated/dockerfilelint Dockerfile
+done
+# (already embedded in Dockerfile due to prerequisites)
+# docker run --rm --tty --volume $(pwd):/app --workdir /app golangci/golangci-lint:v1.61.0 golangci-lint run -v
+docker run --rm --volume $(pwd):/app --workdir /app aquasec/trivy repo --skip-files cert-web/private/web.key .
+```
 
 See also
 --------
@@ -31,3 +70,4 @@ Copyright
 The code is licensed as GNU AGPLv3. See the LICENSE file for the full license.
 
 ♡2013 by Bruno Michel. Copying is an act of love. Please copy and share.
+2024 by Benoît Sibaud and Adrien Dorsaz.

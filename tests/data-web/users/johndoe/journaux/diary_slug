@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>Diary about something</title>
+<style type="text/css">header#branding h1 { background-image: url(/img/logo/red_100x100.png) }</style>
+<meta content="width=device-width" name="viewport">
+<meta content="John Doe" name="author">
+<meta content="A diary about something" name="description">
+<meta content="diary, something" name="keywords">
+</head>
+
+<aside id="sidebar">
+<header id="branding"><h1 title="Logo"><a href="/">Site</a></h1></header>
+</aside>
+
+<body class="" id="diary-show">
+<div id="top"></div>
+
+<section class="container" id="container">
+<main id="contents" role="main">
+<article class="node hentry score1 diary" itemscope="" itemtype="http://schema.org/Article">
+<header>
+<h1 class="entry-title" itemprop="name"><a href="/users/johndoe/journaux/diary_slug">Diary about something</a></h1>
+<div class="meta">
+<span class="posted_by_spanblock">Posted&nbsp;by&nbsp;John Doe <time datetime="2024-05-09T16:42:42+02:00" class="updated">May the 09th at 16:42</time>.</span>
+<span class="edited_by_spanblock">Edited by <span class="edited_by">Jane Doe et Jack Doe</span>.</span>
+<span class="moderated_by_spanblock">Moderated by Josh Doe.</span>
+<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/deed.fr">Licence CC&nbsp;By‑SA.</a>
+<div class="tags">
+Tags&nbsp;:
+<ul class="tag_cloud" itemprop="keywords">
+<li>diary</li>
+<li>something</li>
+</ul>
+</div>
+</div>
+</header>
+<div class="content entry-content" itemprop="articleBody">
+<p><strong>Main info</strong></p>
+
+<p>More info</p>
+
+</div>
+</article>
+
+</main>
+
+</section>
+</html>
