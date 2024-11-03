@@ -70,4 +70,5 @@ Copyright
 The code is licensed as GNU AGPLv3. See the LICENSE file for the full license.
 
 ♡2013 by Bruno Michel. Copying is an act of love. Please copy and share.
+
 2024 by Benoît Sibaud and Adrien Dorsaz.
