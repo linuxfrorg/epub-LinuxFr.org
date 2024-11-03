@@ -5,7 +5,7 @@ This daemon creates on the fly epub3 from a content on LinuxFr.org and its
 comments.
 
 
-How to use it?
+How to use it? (outside Docker)
 --------------
 
 [Install Go](http://golang.org/doc/install) and don't forget to set `$GOPATH`
@@ -17,6 +17,7 @@ How to use it?
 And, to display the help:
 
     $ epub-LinuxFr.org -h
+
 How to use it? (with Docker)
 -------------------------------
 
@@ -26,6 +27,20 @@ Build and run Docker image:
     $ docker run --publish 9000:9000 linuxfr.org-epub
     or
     $ docker run --publish 9000:9000 --env HOST=somewebserver linuxfr.org-epub
+
+How it works?
+-------------
+
+Accepted requests are:
+- `GET /status` (expected answer is HTTP 200 with "OK" body)
+- get the corresponding content + comments on host site, converted into EPUB
+  - `GET /news/<slug>.epub` (news)
+  - `GET /users/<user>/journaux/<slug>.epub` (diary)
+  - `GET /forums/<forum>/posts/<slug>.epub` (post / forum entry)
+  - `GET /sondages/<slug>.epub` (poll)
+  - `GET /suivi/<slug>.epub` (tracker entry)
+  - `GET /wiki/<slug>.epub` (wiki page)
+- otherwise HTTP 404
 
 Caveats
 -------
