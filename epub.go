@@ -10,13 +10,13 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"runtime"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
@@ -55,7 +55,7 @@ type Epub struct {
 }
 
 const (
-	// The maximal size for an image is 5MB
+	// The maximal size for an image is 5MiB
 	maxSize = 5 * (1 << 20)
 
 	ContentType    = "application/epub+zip"
@@ -186,16 +186,38 @@ func NewEpub(w io.Writer, id string) (epub *Epub) {
 		Items:      []Item{},
 		Images:     []string{},
 	}
-	epub.AddMimetype()
-	epub.AddDir("META-INF")
-	epub.AddFile("META-INF/container.xml", []byte(Container))
-	epub.AddDir("EPUB")
-	epub.AddFile("EPUB/nav.xhtml", []byte(Nav))
-	epub.AddFile("EPUB/RonRonnement.css", []byte(Stylesheet))
+	err := epub.AddMimetype()
+	if (err != nil) {
+		log.Print("Error: ", err)
+	}
+	err = epub.AddDir("META-INF")
+	if (err != nil) {
+		log.Print("Error: ", err)
+	}
+	err = epub.AddFile("META-INF/container.xml", []byte(Container))
+	if (err != nil) {
+		log.Print("Error: ", err)
+	}
+	err = epub.AddDir("EPUB")
+	if (err != nil) {
+		log.Print("Error: ", err)
+	}
+	err = epub.AddFile("EPUB/nav.xhtml", []byte(Nav))
+	if (err != nil) {
+		log.Print("Error: ", err)
+	}
+	err = epub.AddFile("EPUB/RonRonnement.css", []byte(Stylesheet))
+	if (err != nil) {
+		log.Print("Error: ", err)
+	}
 	return
 }
 
 func (epub *Epub) importImage(uri *url.URL, filename string) {
+	if uri.Scheme == "data" {
+		epub.ChanImages <- nil
+		return
+	}
 	if uri.Host == "" {
 		uri.Host = Host
 	}
@@ -223,7 +245,7 @@ func (epub *Epub) importImage(uri *url.URL, filename string) {
 		return
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Print("Error: ", err)
 		epub.ChanImages <- nil
@@ -292,6 +314,9 @@ func (epub *Epub) toHtml(node xml.Node) string {
 	if err == nil {
 		for _, img := range imgs {
 			uri, err := url.Parse(img.Attr("src"))
+			if uri.Scheme == "data" {
+				continue
+			}
 			if err == nil {
 				found := false
 				for _, s := range epub.Images {
@@ -327,7 +352,10 @@ func (epub *Epub) AddContent(article xml.Node) {
 		FooterHtml
 	filename := "content.xhtml"
 	epub.Items = append(epub.Items, Item{"item-content", filename, "application/xhtml+xml", true})
-	epub.AddFile("EPUB/"+filename, []byte(html))
+	err := epub.AddFile("EPUB/"+filename, []byte(html))
+	if (err != nil) {
+		log.Print("Error: ", err)
+	}
 }
 
 func (epub *Epub) AddComments(article xml.Node) {
@@ -346,7 +374,10 @@ func (epub *Epub) AddComments(article xml.Node) {
 		id := thread.Attr("id")
 		filename := id + ".html"
 		epub.Items = append(epub.Items, Item{id, filename, "application/xhtml+xml", true})
-		epub.AddFile("EPUB/"+filename, []byte(html))
+		err := epub.AddFile("EPUB/"+filename, []byte(html))
+		if (err != nil) {
+			log.Print("Error: ", err)
+		}
 	}
 }
 
@@ -374,19 +405,16 @@ func (epub *Epub) FindMetas(article xml.Node, selector string) []string {
 
 func (epub *Epub) FindCover(article xml.Node) string {
 	root := article.MyDocument().Root()
-	xpath := Css2xpath("#branding > h1")
+	xpath := "//style"
 	nodes, err := root.Search(xpath)
 	if err != nil || len(nodes) == 0 {
 		return ""
 	}
-	style := nodes[0].Attr("style")
-	parts := strings.Split(style, "'")
-	if len(parts) < 2 {
-		return ""
-	}
-	filename := strings.Replace(parts[1], "/", "", -1)
-	go epub.importImage(&url.URL{Host: Host, Path: parts[1]}, filename)
-	epub.Images = append(epub.Images, parts[1])
+	var re = regexp.MustCompile(`^.*url\((.*)\).*$`)
+	imgpath := re.ReplaceAllString(nodes[0].Content(), `$1`)
+	filename := strings.Replace(imgpath, "/", "", -1)
+	go epub.importImage(&url.URL{Host: Host, Path: imgpath}, filename)
+	epub.Images = append(epub.Images, imgpath)
 	return filename
 }
 
@@ -450,8 +478,10 @@ func (epub *Epub) Close() {
 	for i := 0; i < len(epub.Images); i++ {
 		image := <-epub.ChanImages
 		if image != nil {
-			epub.AddFile("EPUB/"+image.Filename, image.Content)
-			if image.Filename != epub.Cover {
+			err := epub.AddFile("EPUB/"+image.Filename, image.Content)
+			if (err != nil) {
+				log.Print("Error: ", err)
+			} else if image.Filename != epub.Cover {
 				id := fmt.Sprintf("img-%d", i)
 				item := Item{id, image.Filename, image.Mimetype, false}
 				epub.Items = append(epub.Items, item)
@@ -466,7 +496,10 @@ func (epub *Epub) Close() {
 		return
 	}
 
-	epub.AddFile("EPUB/package.opf", []byte(XmlDeclaration+opf.String()))
+	err = epub.AddFile("EPUB/package.opf", []byte(XmlDeclaration+opf.String()))
+	if (err != nil) {
+		log.Print("Error: ", err)
+	}
 	err = epub.Zip.Close()
 	if err != nil {
 		log.Print("Error on closing zip: ", err)
@@ -481,16 +514,20 @@ func FetchArticle(uri string) (article xml.Node, err error) {
 		return
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		log.Printf("Error on ioutil.ReadAll for %s: %s\n", uri, err)
+		log.Printf("Error on io.ReadAll for %s: %s\n", uri, err)
 		return
 	}
 
 	doc, err := gokogiri.ParseHtml(body)
 	if err != nil {
 		log.Printf("Gokogiri error: %s\n", err)
+		return
+	}
+	if doc.Root() == nil {
+		log.Printf("No root found in the page\n")
 		return
 	}
 
@@ -516,7 +553,7 @@ func Content(w http.ResponseWriter, r *http.Request) {
 		uri += "?results=1"
 	}
 	article, err := FetchArticle(uri)
-	if err != nil {
+	if err != nil || article == nil {
 		http.NotFound(w, r)
 		return
 	}
@@ -556,8 +593,14 @@ func main() {
 		if err != nil {
 			log.Fatal("OpenFile: ", err)
 		}
-		syscall.Dup2(int(f.Fd()), int(os.Stdout.Fd()))
-		syscall.Dup2(int(f.Fd()), int(os.Stderr.Fd()))
+		err = syscall.Dup2(int(f.Fd()), int(os.Stdout.Fd()))
+		if err != nil {
+			log.Fatal("Dup2 (stdout): ", err)
+		}
+		err = syscall.Dup2(int(f.Fd()), int(os.Stderr.Fd()))
+		if err != nil {
+			log.Fatal("Dup2 (stderr): ", err)
+		}
 	}
 
 	// Routing

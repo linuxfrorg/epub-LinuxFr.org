@@ -1,1 +1,7 @@
 epub-LinuxFr.org
+epub-linuxfr.org
+old/
+tests/cert-web/private*
+tests/cert-web/certs*
+tests/epub/*.epub
+tests/epub/*.epub.broken

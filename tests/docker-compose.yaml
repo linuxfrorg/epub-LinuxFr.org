@@ -1,0 +1,81 @@
+---
+version: "3.8"
+
+services:
+  nginx-cert:
+    build:
+      context: cert-web/
+    volumes:
+      - ./cert-web:/app
+    environment:
+      WEB_NAME: nginx
+      WEB_IP4: 192.168.42.20
+      WEB_IP6: fd42:3200:3200::20
+
+  linuxfr.org-epub:
+    build:
+      context: ..
+    environment:
+      HOST: "nginx"
+      ADDR: "0.0.0.0:9000"
+    ports:
+      - "9000:9000"
+    networks:
+      ipv6_network:
+        ipv4_address: 192.168.42.50
+        ipv6_address: fd42:3200:3200::50
+    volumes:
+      - ./cert-web/certs:/etc/ssl/certs
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv6.conf.eth0.proxy_ndp=1
+    depends_on:
+      nginx:
+        condition: service_started
+
+  nginx:
+    image: nginx:1.25.4
+    volumes:
+      - ./data-web:/usr/share/nginx/html
+      - ./cert-web/private:/etc/ssl/private
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      ipv6_network:
+        ipv4_address: 192.168.42.20
+        ipv6_address: fd42:3200:3200::20
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv6.conf.eth0.proxy_ndp=1
+    depends_on:
+      nginx-cert:
+        condition: service_completed_successfully
+
+  linuxfr.org-epub-test:
+    build:
+      context: .
+    volumes:
+      - ./epub:/app/epub/
+    networks:
+      ipv6_network:
+        ipv4_address: 192.168.42.80
+        ipv6_address: fd42:3200:3200::80
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv6.conf.eth0.proxy_ndp=1
+    depends_on:
+      nginx:
+        condition: service_started
+      linuxfr.org-epub:
+        condition: service_started
+
+networks:
+  ipv6_network:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: fd42:3200:3200::/64
+          gateway: fd42:3200:3200::1
+        - subnet: 192.168.42.0/24
+          gateway: 192.168.42.1
