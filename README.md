@@ -57,7 +57,6 @@ Testsuite requires docker-compose.
 ```
 cd tests/
 docker-compose up --build
-DEBUG=1 ./epub-tests.sh
 ```
 
 Extra checks (linter for Dockefile and vulnerability/secret scan):
@@ -69,7 +68,7 @@ do
   docker run --rm --volume $(pwd)/$image:/app/Dockerfile --workdir /app replicated/dockerfilelint Dockerfile
 done
 # (already embedded in Dockerfile due to prerequisites)
-# docker run --rm --tty --volume $(pwd):/app --workdir /app golangci/golangci-lint:v1.62.0 golangci-lint run -v
+# docker run --rm --tty --volume $(pwd):/app --workdir /app golangci/golangci-lint:v1.62.2 golangci-lint run -v
 docker run --rm --volume $(pwd):/app --workdir /app aquasec/trivy repo --skip-files cert-web/private/web.key .
 ```
 
