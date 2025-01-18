@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM docker.io/alpine:3.20.3
+FROM docker.io/alpine:3.20.5
 
 LABEL "org.opencontainers.image.source"="https://github.com/linuxfrorg/img-LinuxFr.org"
 LABEL "org.opencontainers.image.description"="Certificates for tests"
