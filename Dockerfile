@@ -57,6 +57,5 @@ COPY --from=build /epub-LinuxFr.org /epub-LinuxFr.org
 
 EXPOSE 9000
 
-# variable not interpreted with JSON format
-# hadolint ignore=DL3025
-CMD /epub-LinuxFr.org -l ${LOGFILE:--} -a ${ADDR:-127.0.0.1:9000} -H ${HOST:-nginx}
+ENTRYPOINT ["/epub-LinuxFr.org"]
+CMD ["--help"]

@@ -15,9 +15,7 @@ services:
   linuxfr.org-epub:
     build:
       context: ..
-    environment:
-      HOST: "nginx"
-      ADDR: "0.0.0.0:9000"
+    command: -l - -a 0.0.0.0:9000 -H nginx
     ports:
       - "9000:9000"
     networks:

@@ -25,8 +25,6 @@ Build and run Docker image:
 
     $ docker build -t linuxfr.org-epub .
     $ docker run --publish 9000:9000 linuxfr.org-epub
-    or
-    $ docker run --publish 9000:9000 --env HOST=somewebserver linuxfr.org-epub
 
 How it works?
 -------------
