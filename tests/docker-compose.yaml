@@ -34,7 +34,7 @@ services:
         condition: service_started
 
   nginx:
-    image: nginx:1.26.2
+    image: nginx:1.26.3
     volumes:
       - ./data-web:/usr/share/nginx/html
       - ./cert-web/private:/etc/ssl/private
