@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Build
-FROM docker.io/golang:1.24.0-bookworm AS build
+FROM docker.io/golang:1.24.1-bookworm AS build
 
 WORKDIR /app
 
@@ -21,19 +21,23 @@ RUN apt-get update \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-RUN go build -trimpath -o /epub-LinuxFr.org
+RUN go build -trimpath -o epub-LinuxFr.org
 
 RUN go install golang.org/x/vuln/cmd/govulncheck@latest \
   && govulncheck -show verbose ./... \
-  && govulncheck --mode=binary -show verbose /epub-LinuxFr.org
+  && govulncheck --mode=binary -show verbose epub-LinuxFr.org
 
 # Lint
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN curl --fail --silent --show-error --location "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh"|sh -s -- -b "$(go env GOPATH)"/bin v1.64.3 \
+RUN curl --fail --silent --show-error --location "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh"|sh -s -- -b "$(go env GOPATH)"/bin v2.0.2 \
   && golangci-lint run -v
 
 # Deploy
 FROM docker.io/debian:bookworm
+ARG UID=1000
+ARG GID=1000
+RUN addgroup --gid "${GID}" app \
+  && adduser --disabled-password --comment '' --home /app --shell /bin/sh --uid "${UID}" --ingroup app app
 
 LABEL "org.opencontainers.image.source"="https://github.com/linuxfrorg/epub-LinuxFr.org"
 LABEL "org.opencontainers.image.description"="Produce on the fly epub3 from a content on LinuxFr.org and its comments"
@@ -49,13 +53,13 @@ RUN apt-get update \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-USER 1000
+USER app
 
-WORKDIR /
+WORKDIR /app
 
-COPY --from=build /epub-LinuxFr.org /epub-LinuxFr.org
+COPY --from=build --chown=app:app /app/epub-LinuxFr.org .
 
 EXPOSE 9000
 
-ENTRYPOINT ["/epub-LinuxFr.org"]
+ENTRYPOINT ["/app/epub-LinuxFr.org"]
 CMD ["--help"]

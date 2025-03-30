@@ -66,7 +66,7 @@ do
   docker run --rm --volume $(pwd)/$image:/app/Dockerfile --workdir /app replicated/dockerfilelint Dockerfile
 done
 # (already embedded in Dockerfile due to prerequisites)
-# docker run --rm --tty --volume $(pwd):/app --workdir /app golangci/golangci-lint:v1.64.3 golangci-lint run -v
+# docker run --rm --tty --volume $(pwd):/app --workdir /app golangci/golangci-lint:v2.0.2 golangci-lint run -v
 docker run --rm --volume $(pwd):/app --workdir /app aquasec/trivy repo --skip-files cert-web/private/web.key .
 ```
 
@@ -83,4 +83,4 @@ The code is licensed as GNU AGPLv3. See the LICENSE file for the full license.
 
 ♡2013 by Bruno Michel. Copying is an act of love. Please copy and share.
 
-2024 by Benoît Sibaud and Adrien Dorsaz.
+2024-2025 by Benoît Sibaud and Adrien Dorsaz.

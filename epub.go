@@ -232,7 +232,12 @@ func (epub *Epub) importImage(uri *url.URL, filename string) {
 		epub.ChanImages <- nil
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+    err := resp.Body.Close()
+    if err != nil {
+      log.Fatal(err)
+    }
+  }()
 
 	if resp.StatusCode != 200 {
 		log.Printf("Status code of %s is: %d\n", uri, resp.StatusCode)
@@ -324,7 +329,7 @@ func (epub *Epub) toHtml(node xml.Node) string {
 						found = true
 					}
 				}
-				filename := strings.Replace(uri.Path, "/", "", -1)
+				filename := strings.ReplaceAll(uri.Path, "/", "")
 				if len(filename) > 64 {
 					hashpart := sha256.Sum224([]byte(uri.String()))
 					filename = hex.EncodeToString(hashpart[:]) + path.Ext(filename)
@@ -412,7 +417,7 @@ func (epub *Epub) FindCover(article xml.Node) string {
 	}
 	var re = regexp.MustCompile(`^.*url\((.*)\).*$`)
 	imgpath := re.ReplaceAllString(nodes[0].Content(), `$1`)
-	filename := strings.Replace(imgpath, "/", "", -1)
+	filename := strings.ReplaceAll(imgpath, "/", "")
 	go epub.importImage(&url.URL{Host: Host, Path: imgpath}, filename)
 	epub.Images = append(epub.Images, imgpath)
 	return filename
@@ -515,7 +520,10 @@ func FetchArticle(uri string) (article xml.Node, err error) {
 	}
 
 	body, err := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	err_close := resp.Body.Close()
+	if err_close!= nil {
+		log.Fatal(err_close)
+	}
 	if err != nil {
 		log.Printf("Error on io.ReadAll for %s: %s\n", uri, err)
 		return
@@ -539,7 +547,7 @@ func FetchArticle(uri string) (article xml.Node, err error) {
 	}
 
 	if len(articles) == 0 {
-		err = errors.New("No article found in the page")
+		err = errors.New("no article found in the page")
 		return
 	}
 
@@ -571,7 +579,10 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 // Returns 200 OK if the server is running (for monitoring)
 func Status(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "OK")
+  _, err := fmt.Fprintf(w, "OK")
+  if err != nil {
+      log.Fatal(err)
+  }
 }
 
 func main() {
