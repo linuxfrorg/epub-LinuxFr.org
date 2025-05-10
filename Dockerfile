@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Build
-FROM docker.io/golang:1.24.1-bookworm AS build
+FROM docker.io/golang:1.24.3-bookworm AS build
 
 WORKDIR /app
 
@@ -29,7 +29,7 @@ RUN go install golang.org/x/vuln/cmd/govulncheck@latest \
 
 # Lint
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN curl --fail --silent --show-error --location "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh"|sh -s -- -b "$(go env GOPATH)"/bin v2.0.2 \
+RUN curl --fail --silent --show-error --location "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh"|sh -s -- -b "$(go env GOPATH)"/bin v2.1.6 \
   && golangci-lint run -v
 
 # Deploy
