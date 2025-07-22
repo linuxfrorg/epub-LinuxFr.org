@@ -15,19 +15,19 @@ COPY tests_misc.hurl ./
 COPY tests_epub.hurl ./
 COPY epub-tests.sh ./
 
-# hadolint ignore=SC2016
 RUN set -eux; \
   apk add --no-cache \
     bash=5.2.37-r0 \
     curl=8.12.1-r1 \
-    openjdk17=17.0.14_p7-r0 \
-    openssl=3.3.3-r0 \
+    openjdk17=17.0.16_p8-r0 \
+    openssl=3.3.4-r0 \
     shellcheck=0.10.0-r1 \
     unzip=6.0-r15 \
-    bind-tools=9.18.35-r0 \
-  && shellcheck /app/epub-tests.sh \
-  && curl --fail --silent --show-error --location \
-    -o "/tmp/epubcheck-$EPUBCHECK_VERSION.zip" \
+    bind-tools=9.18.37-r0 \
+  && shellcheck /app/epub-tests.sh
+# hadolint ignore=SC2016
+RUN curl --fail --verbose --show-error --location \
+    --output "/tmp/epubcheck-$EPUBCHECK_VERSION.zip" \
     --url "https://github.com/w3c/epubcheck/releases/download/v${EPUBCHECK_VERSION}/epubcheck-$EPUBCHECK_VERSION.zip" \
   && unzip -q -o "/tmp/epubcheck-$EPUBCHECK_VERSION.zip" -d /app \
   && apk del --no-cache unzip \

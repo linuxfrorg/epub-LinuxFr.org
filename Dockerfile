@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Build
-FROM docker.io/golang:1.24.3-bookworm AS build
+FROM docker.io/golang:1.24.5-bookworm AS build
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     libonig-dev=6.9.8-1 \
-    libxml2-dev=2.9.14+dfsg-1.3~deb12u1 \
+    libxml2-dev=2.9.14+dfsg-1.3~deb12u2 \
     pkgconf=1.8.1-1 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
@@ -29,7 +29,7 @@ RUN go install golang.org/x/vuln/cmd/govulncheck@latest \
 
 # Lint
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN curl --fail --silent --show-error --location "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh"|sh -s -- -b "$(go env GOPATH)"/bin v2.1.6 \
+RUN curl --fail --silent --show-error --location "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh"|sh -s -- -b "$(go env GOPATH)"/bin v2.3.0 \
   && golangci-lint run -v
 
 # Deploy
