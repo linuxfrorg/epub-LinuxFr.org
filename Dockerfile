@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1
 
+FROM golangci/golangci-lint:v2.3.1-alpine AS lint
+
 # Build
 FROM docker.io/golang:1.24.5-bookworm AS build
 
@@ -28,9 +30,8 @@ RUN go install golang.org/x/vuln/cmd/govulncheck@latest \
   && govulncheck --mode=binary -show verbose epub-LinuxFr.org
 
 # Lint
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN curl --fail --silent --show-error --location "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh"|sh -s -- -b "$(go env GOPATH)"/bin v2.3.0 \
-  && golangci-lint run -v
+COPY --from=lint /usr/bin/golangci-lint "/go/bin/golangci-lint"
+RUN golangci-lint run -v
 
 # Deploy
 FROM docker.io/debian:bookworm

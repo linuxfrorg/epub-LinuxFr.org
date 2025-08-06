@@ -66,7 +66,7 @@ do
   docker run --rm --volume $(pwd)/$image:/app/Dockerfile --workdir /app replicated/dockerfilelint Dockerfile
 done
 # (already embedded in Dockerfile due to prerequisites)
-# docker run --rm --tty --volume $(pwd):/app --workdir /app golangci/golangci-lint:v2.3.0 golangci-lint run -v
+# docker run --rm --tty --volume $(pwd):/app --workdir /app golangci/golangci-lint:v2.3.1 golangci-lint run -v
 docker run --rm --volume $(pwd):/app --workdir /app aquasec/trivy repo --skip-files cert-web/private/web.key .
 ```
 
