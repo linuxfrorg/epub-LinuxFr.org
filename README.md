@@ -26,6 +26,8 @@ Build and run Docker image:
     $ docker build -t linuxfr.org-epub .
     $ docker run --publish 9000:9000 linuxfr.org-epub
 
+(with static binary by default; use -f Dockerfile.dynamic to get a dynamic binary)
+
 How it works?
 -------------
 
@@ -60,13 +62,13 @@ docker-compose up --build
 Extra checks (linter for Dockefile and vulnerability/secret scan):
 
 ```bash
-for image in Dockerfile tests/Dockerfile tests/cert-web/Dockerfile
+for image in Dockerfile Dockerfile.dynamic tests/Dockerfile tests/cert-web/Dockerfile
 do
   docker run --rm --interactive hadolint/hadolint < "$image"
   docker run --rm --volume $(pwd)/$image:/app/Dockerfile --workdir /app replicated/dockerfilelint Dockerfile
 done
 # (already embedded in Dockerfile due to prerequisites)
-# docker run --rm --tty --volume $(pwd):/app --workdir /app golangci/golangci-lint:v2.3.1 golangci-lint run -v
+# docker run --rm --tty --volume $(pwd):/app --workdir /app golangci/golangci-lint:vx.y.z golangci-lint run -v
 docker run --rm --volume $(pwd):/app --workdir /app aquasec/trivy repo --skip-files cert-web/private/web.key .
 ```
 

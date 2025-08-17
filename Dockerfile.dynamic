@@ -1,0 +1,67 @@
+# syntax=docker/dockerfile:1
+
+FROM golangci/golangci-lint:v2.4.0-alpine AS lint
+
+# Build
+FROM docker.io/golang:1.25.0-trixie AS build
+
+WORKDIR /app
+
+COPY go.mod ./
+COPY go.sum ./
+RUN go mod download
+
+COPY *.go ./
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    libonig-dev=6.9.9-1+b1 \
+    libxml2-dev=2.12.7+dfsg+really2.9.14-2.1 \
+    pkgconf=1.8.1-4 \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN go build -trimpath -o epub-LinuxFr.org
+
+RUN go install golang.org/x/vuln/cmd/govulncheck@latest \
+  && govulncheck -show verbose ./... \
+  && govulncheck --mode=binary -show verbose epub-LinuxFr.org
+
+# Lint
+COPY --from=lint /usr/bin/golangci-lint "/go/bin/golangci-lint"
+RUN golangci-lint run -v
+
+# Deploy
+FROM docker.io/debian:trixie
+LABEL "org.opencontainers.image.source"="https://github.com/linuxfrorg/epub-LinuxFr.org"
+LABEL "org.opencontainers.image.description"="Produce on the fly epub3 from a content on LinuxFr.org and its comments"
+LABEL "org.opencontainers.image.licenses"="AGPL-3.0-only"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+  && apt-get install --assume-yes --no-install-recommends \
+    adduser=3.152 \
+    libonig5=6.9.9-1+b1 \
+    libxml2=2.12.7+dfsg+really2.9.14-2.1 \
+    ca-certificates=20250419 \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+ARG UID=1000
+ARG GID=1000
+RUN addgroup --gid "${GID}" app \
+  && adduser --disabled-password --comment '' --home /app --shell /bin/sh --uid "${UID}" --ingroup app app
+
+USER app
+
+WORKDIR /app
+
+COPY --from=build --chown=app:app /app/epub-LinuxFr.org .
+
+EXPOSE 9000
+
+ENTRYPOINT ["/app/epub-LinuxFr.org"]
+CMD ["--help"]

@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
 
-FROM golangci/golangci-lint:v2.3.1-alpine AS lint
+FROM golangci/golangci-lint:v2.4.0-alpine AS lint
 
 # prepare workaround for libonig.a not available in libonig-dev Debian package?!
-FROM debian:bookworm AS libonig-static
+FROM debian:trixie AS libonig-static
 
 ARG UID=1000
 ARG GID=1000
@@ -12,14 +12,14 @@ ARG GID=1000
 RUN sed -i 's/Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources \
   && apt-get update \
   && apt-get build-dep --assume-yes --no-install-recommends libonig \
-  && apt-get source libonig=6.9.8-1 \
+  && apt-get source libonig=6.9.9-1 \
   && cd libonig-* \
   && dpkg-buildpackage -us -uc -nc \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
 # Build
-FROM docker.io/golang:1.24.5-bookworm AS build
+FROM docker.io/golang:1.25.0-trixie AS build
 
 WORKDIR /app
 
@@ -33,17 +33,18 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    libonig-dev=6.9.8-1 \
-    libxml2-dev=2.9.14+dfsg-1.3~deb12u2 \
-    liblzma-dev=5.4.1-1 \
-    libzstd-dev:amd64=1.5.4+dfsg2-5 \
-    zlib1g-dev:amd64=1:1.2.13.dfsg-1 \
-    pkgconf=1.8.1-1 \
+    libonig-dev=6.9.9-1+b1 \
+    libxml2-dev=2.12.7+dfsg+really2.9.14-2.1 \
+    liblzma-dev=5.8.1-1 \
+    libzstd-dev:amd64=1.5.7+dfsg-1 \
+    zlib1g-dev:amd64=1:1.3.dfsg+really1.3.1-1+b1 \
+    libicu-dev=76.1-4 \
+    pkgconf=1.8.1-4 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
 # workaround for libonig.a not available in libonig-dev Debian package?!
-COPY --from=libonig-static /libonig-6.9.8/src/.libs/libonig.a /usr/lib/x86_64-linux-gnu/
+COPY --from=libonig-static /libonig-6.9.9/src/.libs/libonig.a /usr/lib/x86_64-linux-gnu/
 
 # we could dynamically built with dependances on libxml2, libonig5 and libc
 # RUN go build -trimpath -o epub-LinuxFr.org
@@ -52,7 +53,8 @@ COPY --from=libonig-static /libonig-6.9.8/src/.libs/libonig.a /usr/lib/x86_64-li
 # 'requires at runtime the shared libraries from the glibc version used for linking'
 # according to compiler/linker but we won't listen to anyway because because
 # and deploy on alpine
-RUN GOOS=linux GOARCH=amd64 go build \
+RUN go vet \
+  && GOOS=linux GOARCH=amd64 go build \
     -ldflags='-extldflags "-static -lz -licuuc -licutu -licuio -llzma -licudata -lstdc++ -lm" -w -L /usr/lib/x86_64-linux-gnu -L /usr/lib/gcc/x86_64-linux-gnu"' \
     -trimpath -o epub-LinuxFr.org \
   && ldd epub-LinuxFr.org || echo "OK not dynamic"
@@ -66,7 +68,7 @@ COPY --from=lint /usr/bin/golangci-lint "/go/bin/golangci-lint"
 RUN golangci-lint run -v
 
 # Deploy
-FROM docker.io/alpine:3.21.4
+FROM docker.io/alpine:3.22.1
 ARG UID=1000
 ARG GID=1000
 RUN addgroup -g "${GID}" app \
