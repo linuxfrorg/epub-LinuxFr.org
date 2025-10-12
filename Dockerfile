@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM golangci/golangci-lint:v2.4.0-alpine AS lint
+FROM golangci/golangci-lint:v2.5.0-alpine AS lint
 
 # prepare workaround for libonig.a not available in libonig-dev Debian package?!
 FROM debian:trixie AS libonig-static
@@ -19,7 +19,7 @@ RUN sed -i 's/Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sou
   && rm -rf /var/lib/apt/lists/*
 
 # Build
-FROM docker.io/golang:1.25.0-trixie AS build
+FROM docker.io/golang:1.25.2-trixie AS build
 
 WORKDIR /app
 
@@ -34,7 +34,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     libonig-dev=6.9.9-1+b1 \
-    libxml2-dev=2.12.7+dfsg+really2.9.14-2.1 \
+    libxml2-dev=2.12.7+dfsg+really2.9.14-2.1+deb13u1 \
     liblzma-dev=5.8.1-1 \
     libzstd-dev:amd64=1.5.7+dfsg-1 \
     zlib1g-dev:amd64=1:1.3.dfsg+really1.3.1-1+b1 \
@@ -68,12 +68,12 @@ COPY --from=lint /usr/bin/golangci-lint "/go/bin/golangci-lint"
 RUN golangci-lint run -v
 
 # Deploy
-FROM docker.io/alpine:3.22.1
+FROM docker.io/alpine:3.22.2
 ARG UID=1000
 ARG GID=1000
 RUN addgroup -g "${GID}" app \
   && adduser -D -g '' -h /app -s /bin/sh -u "${UID}" -G app app \
-  && apk add --no-cache ca-certificates=20250619-r0
+  && apk add --no-cache ca-certificates=20250911-r0
 USER app
 
 

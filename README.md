@@ -21,12 +21,14 @@ And, to display the help:
 How to use it? (with Docker)
 -------------------------------
 
-Build and run Docker image:
+Build and run Docker image (static binary by default):
 
     $ docker build -t linuxfr.org-epub .
     $ docker run --publish 9000:9000 linuxfr.org-epub
 
-(with static binary by default; use -f Dockerfile.dynamic to get a dynamic binary)
+With dynamic binary:
+
+    $ docker build -t linuxfr.org-epub-dyn -f Dockerfile.dynamic .
 
 How it works?
 -------------
