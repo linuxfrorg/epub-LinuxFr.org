@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM golangci/golangci-lint:v2.7.0-alpine AS lint
+FROM golangci/golangci-lint:v2.7.1-alpine AS lint
 
 # prepare workaround for libonig.a not available in libonig-dev Debian package?!
 FROM debian:trixie AS libonig-static
