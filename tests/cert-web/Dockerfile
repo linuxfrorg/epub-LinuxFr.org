@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM docker.io/alpine:3.22.2
+FROM docker.io/alpine:3.23.2
 
 LABEL "org.opencontainers.image.source"="https://github.com/linuxfrorg/img-LinuxFr.org"
 LABEL "org.opencontainers.image.description"="Certificates for tests"
@@ -10,7 +10,7 @@ COPY cert-web.sh /usr/local/bin
 
 RUN apk add --no-cache \
     openssl=3.5.4-r0 \
-    shellcheck=0.10.0-r2 \
+    shellcheck=0.11.0-r0 \
   && shellcheck /usr/local/bin/cert-web.sh
 
 WORKDIR /app
