@@ -15,8 +15,8 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"runtime"
 	"regexp"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -187,27 +187,27 @@ func NewEpub(w io.Writer, id string) (epub *Epub) {
 		Images:     []string{},
 	}
 	err := epub.AddMimetype()
-	if (err != nil) {
+	if err != nil {
 		log.Print("Error: ", err)
 	}
 	err = epub.AddDir("META-INF")
-	if (err != nil) {
+	if err != nil {
 		log.Print("Error: ", err)
 	}
 	err = epub.AddFile("META-INF/container.xml", []byte(Container))
-	if (err != nil) {
+	if err != nil {
 		log.Print("Error: ", err)
 	}
 	err = epub.AddDir("EPUB")
-	if (err != nil) {
+	if err != nil {
 		log.Print("Error: ", err)
 	}
 	err = epub.AddFile("EPUB/nav.xhtml", []byte(Nav))
-	if (err != nil) {
+	if err != nil {
 		log.Print("Error: ", err)
 	}
 	err = epub.AddFile("EPUB/RonRonnement.css", []byte(Stylesheet))
-	if (err != nil) {
+	if err != nil {
 		log.Print("Error: ", err)
 	}
 	return
@@ -233,11 +233,11 @@ func (epub *Epub) importImage(uri *url.URL, filename string) {
 		return
 	}
 	defer func() {
-    err := resp.Body.Close()
-    if err != nil {
-      log.Fatal(err)
-    }
-  }()
+		err := resp.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	if resp.StatusCode != 200 {
 		log.Printf("Status code of %s is: %d\n", uri, resp.StatusCode)
@@ -358,7 +358,7 @@ func (epub *Epub) AddContent(article xml.Node) {
 	filename := "content.xhtml"
 	epub.Items = append(epub.Items, Item{"item-content", filename, "application/xhtml+xml", true})
 	err := epub.AddFile("EPUB/"+filename, []byte(html))
-	if (err != nil) {
+	if err != nil {
 		log.Print("Error: ", err)
 	}
 }
@@ -380,7 +380,7 @@ func (epub *Epub) AddComments(article xml.Node) {
 		filename := id + ".html"
 		epub.Items = append(epub.Items, Item{id, filename, "application/xhtml+xml", true})
 		err := epub.AddFile("EPUB/"+filename, []byte(html))
-		if (err != nil) {
+		if err != nil {
 			log.Print("Error: ", err)
 		}
 	}
@@ -484,7 +484,7 @@ func (epub *Epub) Close() {
 		image := <-epub.ChanImages
 		if image != nil {
 			err := epub.AddFile("EPUB/"+image.Filename, image.Content)
-			if (err != nil) {
+			if err != nil {
 				log.Print("Error: ", err)
 			} else if image.Filename != epub.Cover {
 				id := fmt.Sprintf("img-%d", i)
@@ -502,7 +502,7 @@ func (epub *Epub) Close() {
 	}
 
 	err = epub.AddFile("EPUB/package.opf", []byte(XmlDeclaration+opf.String()))
-	if (err != nil) {
+	if err != nil {
 		log.Print("Error: ", err)
 	}
 	err = epub.Zip.Close()
@@ -521,7 +521,7 @@ func FetchArticle(uri string) (article xml.Node, err error) {
 
 	body, err := io.ReadAll(resp.Body)
 	err_close := resp.Body.Close()
-	if err_close!= nil {
+	if err_close != nil {
 		log.Fatal(err_close)
 	}
 	if err != nil {
@@ -579,10 +579,10 @@ func Content(w http.ResponseWriter, r *http.Request) {
 
 // Returns 200 OK if the server is running (for monitoring)
 func Status(w http.ResponseWriter, r *http.Request) {
-  _, err := fmt.Fprintf(w, "OK")
-  if err != nil {
-      log.Fatal(err)
-  }
+	_, err := fmt.Fprintf(w, "OK")
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {

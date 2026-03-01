@@ -27,7 +27,8 @@ COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 
-COPY *.go ./
+COPY epub.go ./epub.go.bak
+COPY epub.go ./epub.go
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -53,7 +54,8 @@ COPY --from=libonig-static /libonig-6.9.9/src/.libs/libonig.a /usr/lib/x86_64-li
 # 'requires at runtime the shared libraries from the glibc version used for linking'
 # according to compiler/linker but we won't listen to anyway because because
 # and deploy on alpine
-RUN go vet \
+RUN go fmt && go vet && go fix \
+  && diff ./epub.go.bak ./epub.go \
   && GOOS=linux GOARCH=amd64 go build \
     -ldflags='-extldflags "-static -lz -licuuc -licutu -licuio -llzma -licudata -lstdc++ -lm" -w -L /usr/lib/x86_64-linux-gnu -L /usr/lib/gcc/x86_64-linux-gnu"' \
     -trimpath -o epub-LinuxFr.org \

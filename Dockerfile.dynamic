@@ -11,7 +11,8 @@ COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 
-COPY *.go ./
+COPY epub.go ./epub.go.bak
+COPY epub.go ./epub.go
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -23,7 +24,9 @@ RUN apt-get update \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-RUN go build -trimpath -o epub-LinuxFr.org
+RUN go fmt && go vet && go fix \
+  && diff ./epub.go.bak ./epub.go \
+  && go build -trimpath -o epub-LinuxFr.org
 
 RUN go install golang.org/x/vuln/cmd/govulncheck@latest \
   && govulncheck -show verbose ./... \
