@@ -215,7 +215,7 @@ HTTP/1.1 404
 GET http://{{TARGET}}:9000/news//news_slug.epub
 [Options]
 http2: {{HTTP2}}
-HTTP/1.1 301
+HTTP/1.1 307
 [Asserts]
 header "Location" == "/news/news_slug.epub"
 
