@@ -67,7 +67,7 @@ RUN go install golang.org/x/vuln/cmd/govulncheck@v1.1.4 \
 
 # Lint
 COPY --from=lint /usr/bin/golangci-lint "/go/bin/golangci-lint"
-RUN golangci-lint run -v
+RUN golangci-lint run --verbose
 
 # Deploy
 FROM docker.io/alpine:3.23.3
