@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM golangci/golangci-lint:v2.10.1-alpine AS lint
+FROM golangci/golangci-lint:v2.11.4-alpine AS lint
 
 # prepare workaround for libonig.a not available in libonig-dev Debian package?!
 FROM debian:trixie AS libonig-static
@@ -19,7 +19,7 @@ RUN sed -i 's/Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sou
   && rm -rf /var/lib/apt/lists/*
 
 # Build
-FROM docker.io/golang:1.26.0-trixie AS build
+FROM docker.io/golang:1.26.1-trixie AS build
 
 WORKDIR /app
 
@@ -61,7 +61,7 @@ RUN go fmt && go vet && go fix \
     -trimpath -o epub-LinuxFr.org \
   && ldd epub-LinuxFr.org || echo "OK not dynamic"
 
-RUN go install golang.org/x/vuln/cmd/govulncheck@latest \
+RUN go install golang.org/x/vuln/cmd/govulncheck@v1.1.4 \
   && govulncheck -show verbose ./... \
   && govulncheck --mode=binary -show verbose epub-LinuxFr.org
 

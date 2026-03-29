@@ -23,12 +23,12 @@ How to use it? (with Docker)
 
 Build and run Docker image (static binary by default):
 
-    $ docker build -t linuxfr.org-epub .
+    $ docker build --tag linuxfr.org-epub .
     $ docker run --publish 9000:9000 linuxfr.org-epub
 
 With dynamic binary:
 
-    $ docker build -t linuxfr.org-epub-dyn -f Dockerfile.dynamic .
+    $ docker build --tag linuxfr.org-epub-dyn --file Dockerfile.dynamic .
 
 How it works?
 -------------
@@ -61,17 +61,28 @@ cd tests/
 docker-compose up --build
 ```
 
-Extra checks (linter for Dockefile and vulnerability/secret scan):
+Extra checks
+------------
+
+Linter for Dockerfile:
 
 ```bash
 for image in Dockerfile Dockerfile.dynamic tests/Dockerfile tests/cert-web/Dockerfile
 do
-  docker run --rm --interactive hadolint/hadolint < "$image"
-  docker run --rm --volume $(pwd)/$image:/app/Dockerfile --workdir /app replicated/dockerfilelint Dockerfile
+  # Test with pinned hadolint/hadolint:v2.14.0-debian
+  docker run --rm --interactive hadolint/hadolint@sha256:158cd0184dcaa18bd8ec20b61f4c1cabdf8b32a592d062f57bdcb8e4c1d312e2 < "$image"
+  # Test with replicated/dockerfilelint but last push more than 5 years ago...
+  # docker run --rm --volume $(pwd)/$image:/app/Dockerfile --workdir /app replicated/dockerfilelint@sha256:15ce784e5847966b6d9a88cba348a9429f8b5212f6017180f10ce36b472dfe52 Dockerfile
 done
+
 # (already embedded in Dockerfile due to prerequisites)
 # docker run --rm --tty --volume $(pwd):/app --workdir /app golangci/golangci-lint:vx.y.z golangci-lint run -v
-docker run --rm --volume $(pwd):/app --workdir /app aquasec/trivy repo --skip-files cert-web/private/web.key .
+
+Vulnerability/secret scanners:
+
+# due to [Trivy security incident 2026-03-19](https://github.com/aquasecurity/trivy/discussions/10425) and [GHSA-xcq4-m2r3-cmrj](https://github.com/aquasecurity/trivy/security/advisories/GHSA-xcq4-m2r3-cmrj), stay with pinned v0.69.3 version
+docker run --rm --volume $(pwd):/app --workdir /app aquasec/trivy@sha256:bcc376de8d77cfe086a917230e818dc9f8528e3c852f7b1aff648949b6258d1c repo --skip-files cert-web/private/web.key .
+docker run --rm --volume $(pwd):/app --workdir /app chainguard/grype:latest --name linuxfr.org-epub --verbose dir:/app
 ```
 
 See also
