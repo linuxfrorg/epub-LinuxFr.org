@@ -28,7 +28,7 @@ RUN go fmt && go vet && go fix \
   && diff ./epub.go.bak ./epub.go \
   && go build -trimpath -o epub-LinuxFr.org
 
-RUN go install golang.org/x/vuln/cmd/govulncheck@v1.1.4 \
+RUN go install golang.org/x/vuln/cmd/govulncheck@v1.3.0 \
   && govulncheck -show verbose ./... \
   && govulncheck --mode=binary -show verbose epub-LinuxFr.org
 

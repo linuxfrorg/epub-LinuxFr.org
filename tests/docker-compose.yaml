@@ -23,6 +23,8 @@ services:
     volumes:
       - ./cert-web/certs:/etc/ssl/certs
     read_only: true
+    cap_drop:
+      - ALL
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=0
       - net.ipv6.conf.eth0.proxy_ndp=1

@@ -61,7 +61,7 @@ RUN go fmt && go vet && go fix \
     -trimpath -o epub-LinuxFr.org \
   && ldd epub-LinuxFr.org || echo "OK not dynamic"
 
-RUN go install golang.org/x/vuln/cmd/govulncheck@v1.1.4 \
+RUN go install golang.org/x/vuln/cmd/govulncheck@v1.3.0 \
   && govulncheck -show verbose ./... \
   && govulncheck --mode=binary -show verbose epub-LinuxFr.org
 
@@ -70,12 +70,12 @@ COPY --from=lint /usr/bin/golangci-lint "/go/bin/golangci-lint"
 RUN golangci-lint run --verbose
 
 # Deploy
-FROM docker.io/alpine:3.23.3
+FROM docker.io/alpine:3.23.4
 ARG UID=1000
 ARG GID=1000
 RUN addgroup -g "${GID}" app \
   && adduser -D -g '' -h /app -s /bin/sh -u "${UID}" -G app app \
-  && apk add --no-cache ca-certificates=20251003-r0
+  && apk add --no-cache ca-certificates=20260413-r0
 USER app
 
 
