@@ -33,7 +33,7 @@ services:
         condition: service_started
 
   nginx:
-    image: nginx:1.28-alpine3.23
+    image: nginx:1.30.2-alpine3.23
     volumes:
       - ./data-web:/usr/share/nginx/html
       - ./cert-web/private:/etc/ssl/private
