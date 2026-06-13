@@ -9,9 +9,15 @@ LABEL "org.opencontainers.image.licenses"="AGPL-3.0-only"
 COPY cert-web.sh /usr/local/bin
 
 RUN apk add --no-cache \
-    openssl=3.5.6-r0 \
+    openssl=3.5.7-r0 \
     shellcheck=0.11.0-r0 \
   && shellcheck /usr/local/bin/cert-web.sh
+
+ARG UID=1000
+ARG GID=1000
+RUN addgroup -g "${GID}" app \
+  && adduser -D -g '' -h /app -s /bin/sh -u "${UID}" -G app app
+USER app
 
 WORKDIR /app
 

@@ -18,19 +18,27 @@ COPY epub-tests.sh ./
 RUN set -eux; \
   apk add --no-cache \
     bash=5.3.3-r1 \
-    curl=8.17.0-r1 \
-    openjdk17=17.0.18_p8-r0 \
-    openssl=3.5.6-r0 \
+    curl=8.19.0-r0 \
+    openjdk17=17.0.19_p10-r0 \
+    openssl=3.5.7-r0 \
     shellcheck=0.11.0-r0 \
     unzip=6.0-r16 \
-    bind-tools=9.20.22-r0 \
-  && shellcheck /app/epub-tests.sh
+    bind-tools=9.20.23-r0
+
+ARG UID=1000
+ARG GID=1000
+RUN addgroup -g "${GID}" app \
+  && adduser -D -g '' -h /app -s /bin/sh -u "${UID}" -G app app
+USER app
+
+WORKDIR /app
+
 # hadolint ignore=SC2016
-RUN curl --fail --verbose --show-error --location \
+RUN shellcheck /app/epub-tests.sh \
+  && curl --fail --verbose --show-error --location \
     --output "/tmp/epubcheck-$EPUBCHECK_VERSION.zip" \
     --url "https://github.com/w3c/epubcheck/releases/download/v${EPUBCHECK_VERSION}/epubcheck-$EPUBCHECK_VERSION.zip" \
   && unzip -q -o "/tmp/epubcheck-$EPUBCHECK_VERSION.zip" -d /app \
-  && apk del --no-cache unzip \
   && rm -rf "/tmp/epubcheck-$EPUBCHECK_VERSION.zip" \
   && printf '#!/bin/bash\n java -jar /app/epubcheck-%s/epubcheck.jar "${@:1}"\n' "$EPUBCHECK_VERSION" > epubcheck \
   && chmod +x epubcheck \
