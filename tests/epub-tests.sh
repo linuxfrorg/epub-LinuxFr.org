@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#
+
 set -eu -o pipefail
 
 SCRIPT_DIR="$(dirname "$0")"
@@ -9,7 +9,7 @@ EPUB_DIR="${SCRIPT_DIR}/epub"
 EPUB="linuxfr.org-epub"
 
 # shellcheck disable=SC2034
-TARGET4="$(dig "${EPUB}" A +short)"        # epub IPv4
+TARGET4="$(dig "${EPUB}" A +short)"      # epub IPv4
 # shellcheck disable=SC2034
 TARGET6="[$(dig "${EPUB}" AAAA +short)]" # epub IPv6
 
