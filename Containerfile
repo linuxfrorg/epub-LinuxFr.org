@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM docker.io/golangci/golangci-lint:v2.12.2-alpine AS lint
+FROM docker.io/golangci/golangci-lint:v2.13.2-alpine AS lint
 
 # prepare workaround for libonig.a not available in libonig-dev Debian package?!
 FROM debian:trixie AS libonig-static
@@ -19,7 +19,7 @@ RUN sed -i 's/Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sou
   && rm -rf /var/lib/apt/lists/*
 
 # Build
-FROM docker.io/golang:1.26.4-trixie AS build
+FROM docker.io/golang:1.27.1-trixie AS build
 
 WORKDIR /app
 
@@ -35,8 +35,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     libonig-dev=6.9.9-1+b1 \
-    libxml2-dev=2.12.7+dfsg+really2.9.14-2.1+deb13u2 \
-    liblzma-dev=5.8.1-1 \
+    libxml2-dev=2.12.7+dfsg+really2.9.14-2.1+deb13u3 \
+    liblzma-dev=5.8.1-1+deb13u1 \
     libzstd-dev:amd64=1.5.7+dfsg-1 \
     zlib1g-dev:amd64=1:1.3.dfsg+really1.3.1-1+b1 \
     libicu-dev=76.1-4 \
@@ -61,7 +61,7 @@ RUN go fmt && go vet && go fix \
     -trimpath -o epub-LinuxFr.org \
   && ldd epub-LinuxFr.org || echo "OK not dynamic"
 
-RUN go install golang.org/x/vuln/cmd/govulncheck@v1.5.0 \
+RUN go install golang.org/x/vuln/cmd/govulncheck@v1.8.0 \
   && govulncheck -show verbose ./... \
   && govulncheck --mode=binary -show verbose epub-LinuxFr.org
 
@@ -70,7 +70,7 @@ COPY --from=lint /usr/bin/golangci-lint "/go/bin/golangci-lint"
 RUN golangci-lint run --verbose
 
 # Deploy
-FROM docker.io/alpine:3.23.5
+FROM docker.io/alpine:3.24.1
 ARG UID=1000
 ARG GID=1000
 RUN addgroup -g "${GID}" app \

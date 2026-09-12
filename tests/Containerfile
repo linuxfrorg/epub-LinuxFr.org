@@ -18,12 +18,12 @@ COPY epub-tests.sh ./
 RUN set -eux; \
   apk add --no-cache \
     bash=5.3.3-r1 \
-    curl=8.19.0-r0 \
-    openjdk17=17.0.19_p10-r0 \
-    openssl=3.5.7-r0 \
+    curl=8.22.0-r0 \
+    openjdk17=17.0.20_p8-r0 \
+    openssl=3.5.8-r0 \
     shellcheck=0.11.0-r0 \
     unzip=6.0-r16 \
-    bind-tools=9.20.23-r0
+    bind-tools=9.20.26-r0
 
 ARG UID=1000
 ARG GID=1000
