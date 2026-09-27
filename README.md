@@ -97,7 +97,7 @@ Linter for Go:
 
 ```bash
 # (already embedded in Containerfile due to prerequisites)
-# docker run --rm --tty --volume $(pwd):/app --workdir /app golangci/golangci-lint:vx.y.z golangci-lint run -v
+# docker run --rm --tty --volume $(pwd):/app --workdir /app docker.io/golangci/golangci-lint:vx.y.z golangci-lint run -v
 ```
 
 Vulnerability/secret scanners:

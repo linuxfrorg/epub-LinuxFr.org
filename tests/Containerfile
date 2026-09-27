@@ -6,7 +6,7 @@ LABEL "org.opencontainers.image.source"="https://github.com/linuxfrorg/img-Linux
 LABEL "org.opencontainers.image.description"="Tests suite for the the fly epub3 producer from a content on LinuxFr.org and its comments"
 LABEL "org.opencontainers.image.licenses"="AGPL-3.0-only"
 
-ARG EPUBCHECK_VERSION=5.3.0
+ARG EPUBCHECK_VERSION=5.4.0
 ARG DEBUG=1
 
 WORKDIR /app
@@ -23,7 +23,7 @@ RUN set -eux; \
     openssl=3.5.8-r0 \
     shellcheck=0.11.0-r0 \
     unzip=6.0-r16 \
-    bind-tools=9.20.26-r0
+    bind-tools=9.20.29-r0
 
 ARG UID=1000
 ARG GID=1000

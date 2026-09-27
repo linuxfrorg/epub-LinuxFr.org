@@ -5,7 +5,7 @@ set -eu -o pipefail
 SCRIPT_DIR="$(dirname "$0")"
 EPUB_DIR="${SCRIPT_DIR}/epub"
 
-# Hosts from Docker compose file
+# Hosts from container compose file
 EPUB="linuxfr.org-epub"
 
 # shellcheck disable=SC2034
