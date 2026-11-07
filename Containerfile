@@ -70,7 +70,7 @@ COPY --from=lint /usr/bin/golangci-lint "/go/bin/golangci-lint"
 RUN golangci-lint run --verbose
 
 # Deploy
-FROM docker.io/alpine:3.24.3
+FROM docker.io/alpine:3.24.4
 ARG UID=1000
 ARG GID=1000
 RUN addgroup -g "${GID}" app \

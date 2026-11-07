@@ -103,7 +103,8 @@ Linter for Go:
 Vulnerability/secret scanners:
 
 ```bash
-docker run --rm --volume $(pwd):/app --workdir /app docker.io/aquasec/trivy:0.76.1 repo --skip-files cert-web/private/web.key .
+# Test with pinned docker.io/aquasec/trivy:0.76.2
+docker run --rm --volume $(pwd):/app --workdir /app docker.io/aquasec/trivy@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb repo --skip-files cert-web/private/web.key .
 docker run --rm --volume $(pwd):/app --workdir /app docker.io/chainguard/grype:latest --name linuxfr.org-epub dir:/app
 ```
 
