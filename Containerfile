@@ -19,7 +19,7 @@ RUN sed -i 's/Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sou
   && rm -rf /var/lib/apt/lists/*
 
 # Build
-FROM docker.io/golang:1.27.3-trixie AS build
+FROM docker.io/golang:1.27.4-trixie AS build
 
 WORKDIR /app
 
