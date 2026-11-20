@@ -61,7 +61,7 @@ RUN go fmt && go vet && go fix \
     -trimpath -o epub-LinuxFr.org \
   && ldd epub-LinuxFr.org || echo "OK not dynamic"
 
-RUN go install golang.org/x/vuln/cmd/govulncheck@v1.9.0 \
+RUN go install golang.org/x/vuln/cmd/govulncheck@v1.10.0 \
   && govulncheck -show verbose ./... \
   && govulncheck --mode=binary -show verbose epub-LinuxFr.org
 
